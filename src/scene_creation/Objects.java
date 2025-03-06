@@ -11,6 +11,7 @@ import org.jogamp.vecmath.*;
 
 
 
+
 public abstract class Objects {
 	protected BranchGroup objBG;                           // load external object to 'objBG'
 	protected TransformGroup objTG;                        // use 'objTG' to position an object
@@ -18,7 +19,8 @@ public abstract class Objects {
 	protected double scale;                                // use 'scale' to define scaling
 	protected Vector3f post;                               // use 'post' to specify location
 	protected Shape3D obj_shape;
-	protected static String obj_name; //For FanBlades and Guard. Setting appearance for multiple parts of an object 
+	protected static String obj_name; //For FanBlades and Guard. Setting appearance for multiple parts of an object
+	protected String file_name; //Filename for texture string
     
 	public abstract TransformGroup position_Object();      // need to be defined in derived classes
 	public abstract void add_Child(TransformGroup nextTG);
@@ -61,17 +63,7 @@ public abstract class Objects {
 			new Color3f(0.175000f, 0.175000f, 0.175000f),
 			new Color3f(0.000000f, 0.000000f, 0.000000f)};
 	
-	protected void obj_Appearance() {		
-		Material mtl = new Material();                     // define material's attributes
-		mtl.setShininess(shine);
-		mtl.setAmbientColor(mtl_clr[0]);                   // use them to define different materials
-		mtl.setDiffuseColor(mtl_clr[1]);
-		mtl.setSpecularColor(mtl_clr[2]);
-		mtl.setEmissiveColor(mtl_clr[3]);                  // use it to enlighten a button
-		mtl.setLightingEnable(true);
-
-		app.setMaterial(mtl);                              // set appearance's material
-	}
+	
 	
 	protected static Texture texture_App(String file_name) {
 		//String file_name = "ImageB" + ".jpg";    // indicate the location of the image, it's in the COMP2800SK folder
@@ -86,16 +78,40 @@ public abstract class Objects {
 
 		return texture;
 	}
+	
+	protected void obj_Appearance() {		
+		Material mtl = new Material();                     // define material's attributes
+		mtl.setShininess(shine);
+		mtl.setAmbientColor(mtl_clr[0]);                   // use them to define different materials
+		mtl.setDiffuseColor(mtl_clr[1]);
+		mtl.setSpecularColor(mtl_clr[2]);
+		mtl.setEmissiveColor(mtl_clr[3]);                  // use it to enlighten a button
+		mtl.setLightingEnable(true);
+
+		app.setMaterial(mtl);                              // set appearance's material
+		
+		//Set appearance's texture for the object
+		TexCoordGeneration tcg = new TexCoordGeneration(TexCoordGeneration.OBJECT_LINEAR,
+				TexCoordGeneration.TEXTURE_COORDINATE_2);
+		app.setTexCoordGeneration(tcg);
+		app.setTexture(texture_App(file_name)); //add texture
+		
+		TextureAttributes textureAttrib= new TextureAttributes();
+		textureAttrib.setTextureMode(TextureAttributes.REPLACE);
+		app.setTextureAttributes(textureAttrib);
+	}
 }
 
 
 //Classes for each 3D objects (Floor, Ceiling, etc.)
 
 class FloorObject extends Objects {
-	public FloorObject() {
+	public FloorObject(String file_name) {                 //Filename for the object
+		super();
+		this.file_name = file_name;
 		scale = 0.3d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
-		transform_Object("Floor");                     // set transformation to 'objTG' and load object file
+		transform_Object("PlaneWall");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
