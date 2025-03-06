@@ -71,7 +71,21 @@ public abstract class Objects {
 		mtl.setLightingEnable(true);
 
 		app.setMaterial(mtl);                              // set appearance's material
-	}	
+	}
+	
+	protected static Texture texture_App(String file_name) {
+		//String file_name = "ImageB" + ".jpg";    // indicate the location of the image, it's in the COMP2800SK folder
+		TextureLoader loader = new TextureLoader(file_name, null);
+		ImageComponent2D image = loader.getImage();        // get the image
+		if (image == null)
+			System.out.println("Cannot load file: " + file_name);
+
+		Texture2D texture = new Texture2D(Texture2D.BASE_LEVEL,
+				Texture2D.RGBA, image.getWidth(), image.getHeight());
+		texture.setImage(0, image);                        // define the texture with the image
+
+		return texture;
+	}
 }
 
 
