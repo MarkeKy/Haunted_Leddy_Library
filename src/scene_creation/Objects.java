@@ -66,7 +66,7 @@ public abstract class Objects {
 	
 	
 	protected static Texture texture_App(String file_name) {
-		//String file_name = "ImageB" + ".jpg";    // indicate the location of the image, it's in the COMP2800SK folder
+		file_name = file_name + ".jpg";    // indicate the location of the image, it's in the COMP2800SK folder
 		TextureLoader loader = new TextureLoader(file_name, null);
 		ImageComponent2D image = loader.getImage();        // get the image
 		if (image == null)
@@ -109,9 +109,9 @@ class FloorObject extends Objects {
 	public FloorObject(String file_name) {                 //Filename for the object
 		super();
 		this.file_name = file_name;
-		scale = 0.3d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
-		transform_Object("PlaneWall");                     // set transformation to 'objTG' and load object file
+		transform_Object("Singlebook1");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
