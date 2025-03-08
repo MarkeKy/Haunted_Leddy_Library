@@ -6,8 +6,11 @@ import org.jogamp.java3d.*;
 import org.jogamp.java3d.loaders.*;
 import org.jogamp.java3d.loaders.objectfile.ObjectFile;
 import org.jogamp.java3d.utils.geometry.Box;
+import org.jogamp.java3d.utils.geometry.Primitive;
 import org.jogamp.java3d.utils.image.TextureLoader;
 import org.jogamp.vecmath.*;
+
+
 
 
 
@@ -66,7 +69,6 @@ public abstract class Objects {
 	
 	
 	protected static Texture texture_App(String file_name) {
-		file_name = file_name + ".jpg";    // indicate the location of the image, it's in the COMP2800SK folder
 		TextureLoader loader = new TextureLoader(file_name, null);
 		ImageComponent2D image = loader.getImage();        // get the image
 		if (image == null)
@@ -120,6 +122,96 @@ class FloorObject extends Objects {
 		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
 	}
 
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
+	}
+}
+
+class ShelfObject extends Objects {
+	public ShelfObject(String file_name) {                 //Filename for the object
+		super();
+		this.file_name = file_name;
+		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
+		transform_Object("EmptySelf");                     // set transformation to 'objTG' and load object file
+		obj_Appearance();                                  // set appearance after converting object node to Shape3D
+	}
+
+	public TransformGroup position_Object() {
+		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
+		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
+	}
+}
+
+class GroupbooksObject extends Objects {
+	public GroupbooksObject(String file_name) {                 //Filename for the object
+		super();
+		this.file_name = file_name;
+		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
+		transform_Object("Groupbooks1");                     // set transformation to 'objTG' and load object file
+		obj_Appearance();                                  // set appearance after converting object node to Shape3D
+	}
+
+	public TransformGroup position_Object() {
+		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
+		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
+	}
+}
+
+class SinglebookObject extends Objects {
+	public SinglebookObject(String file_name) {                 //Filename for the object
+		super();
+		this.file_name = file_name;
+		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
+		transform_Object("Singlebook1");                     // set transformation to 'objTG' and load object file
+		obj_Appearance();                                  // set appearance after converting object node to Shape3D
+	}
+
+	public TransformGroup position_Object() {
+		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
+		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
+	}
+}
+
+class SquareShape extends Objects {
+	public SquareShape(String file_name) {
+		this.file_name = file_name;
+		Transform3D translator = new Transform3D();
+		translator.setTranslation(new Vector3d(0.0, -0.54, 0));
+		objTG = new TransformGroup(translator);            // down half of the tower and base's heights
+
+		objTG.addChild(create_Object());                   // attach the object to 'objTG'
+	}
+	
+	public TransformGroup position_Object() {
+		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
+		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	
+	protected Node create_Object() {
+		app = CommonsSK.set_Appearance(CommonsSK.White);   // set the appearance for the base
+		app.setTexture(Objects.texture_App(file_name));
+		PolygonAttributes pa = new PolygonAttributes();
+		pa.setCullFace(PolygonAttributes.CULL_NONE);       // show both sides
+		app.setPolygonAttributes(pa);
+		return new Box(4f, 0.01f, 4f, Primitive.GENERATE_NORMALS, app);
+	}
+	
 	public void add_Child(TransformGroup nextTG) {
 		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
 	}
