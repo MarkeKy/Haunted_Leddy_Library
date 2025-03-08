@@ -171,8 +171,8 @@ class SinglebookObject extends Objects {
 	public SinglebookObject(String file_name) {                 //Filename for the object
 		super();
 		this.file_name = file_name;
-		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
+		scale = 1d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0f, 1f, 0f);         // location to connect "FanSwitch" with "FanStand"
 		transform_Object("Singlebook1");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}

@@ -10,24 +10,43 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import org.jogamp.java3d.*;
+import org.jogamp.java3d.utils.geometry.Sphere;
 import org.jogamp.java3d.utils.universe.SimpleUniverse;
 import org.jogamp.vecmath.*;
 
+import com.jogamp.newt.event.KeyListener;
 
-public class MainClass extends JPanel {
 
+public class MainClass extends JPanel implements KeyListener {
+	
 	private static final long serialVersionUID = 1L;
 	private static JFrame frame;
 
 	private static final int OBJ_NUM = 6; //+4 objects (Shaft, Motor, Blade, Guard)
-	private static Objects[] object3D = new Objects[1];  //Number of objects
+	private static Objects[] object3D = new Objects[OBJ_NUM];  //Number of objects
+	private static TransformGroup characterTG;
+    private Vector3f position = new Vector3f();
+    private final float MOVE_STEP = 0.2f;
 
 	
 	/* a function to create the library */
 	private static TransformGroup create_Library() {
 	    TransformGroup libraryTG = new TransformGroup();
+	    
+	    characterTG = new TransformGroup();
+        characterTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 
+        Appearance sphereAppearance = new Appearance();
+        sphereAppearance.setMaterial(new Material());
+        Sphere character = new Sphere(0.2f, sphereAppearance);
+        
+        characterTG.addChild(character);
+        object3D[1] = new SinglebookObject("FloorTexture.jpg");
+        
 	    object3D[0] = new SquareShape("ImageEmrald.jpg");                   // create "FloorObject"
+	    
+	    object3D[0].add_Child(object3D[1].position_Object());
+        object3D[0].add_Child(characterTG);
 	    libraryTG = object3D[0].position_Object();             // set fanTG to FanStand's transform group
 	    return libraryTG;
 	}
@@ -88,7 +107,7 @@ public class MainClass extends JPanel {
 //	        });
 	        
 	        SimpleUniverse su = new SimpleUniverse(canvas);
-	        CommonsSK.define_Viewer(su, new Point3d(2f, 0f, 2f));
+	        CommonsSK.define_Viewer(su, new Point3d(0f, 1f, 6f));
 	        sceneBG.compile();
 	        su.addBranchGraph(sceneBG);
 	        setLayout(new BorderLayout());
@@ -96,12 +115,43 @@ public class MainClass extends JPanel {
 	        frame.setSize(800, 800);
 	        frame.setVisible(true);
 	    }
+	 
+	  public void keyPressed(KeyEvent e) {
+	        switch(e.getKeyCode()){
+	            case KeyEvent.VK_UP: position.z -= MOVE_STEP; break;
+	            case KeyEvent.VK_DOWN: position.z += MOVE_STEP; break;
+	            case KeyEvent.VK_LEFT: position.x -= MOVE_STEP; break;
+	            case KeyEvent.VK_RIGHT: position.x += MOVE_STEP; break;
+	        }
+	        updatePosition();
+	    }
+
+	    private void updatePosition() {
+	        Transform3D transform = new Transform3D();
+	        transform.setTranslation(position);
+	        characterTG.setTransform(transform);
+	    }
+
        
 
 	public static void main(String[] args) {
 		frame = new JFrame("Haunted Leddy");                   // NOTE: change XY to student's initials
 		frame.getContentPane().add(new MainClass(create_Scene()));  // start the program
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	}
+
+
+	@Override
+	public void keyPressed(com.jogamp.newt.event.KeyEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void keyReleased(com.jogamp.newt.event.KeyEvent arg0) {
+		// TODO Auto-generated method stub
+		
 	}
 }
 
