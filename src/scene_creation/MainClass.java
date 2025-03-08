@@ -88,7 +88,7 @@ public class MainClass extends JPanel {
 //	        });
 	        
 	        SimpleUniverse su = new SimpleUniverse(canvas);
-	        CommonsSK.define_Viewer(su, new Point3d(0f, 1f, 6f));
+	        CommonsSK.define_Viewer(su, new Point3d(2f, 0f, 2f));
 	        sceneBG.compile();
 	        su.addBranchGraph(sceneBG);
 	        setLayout(new BorderLayout());
