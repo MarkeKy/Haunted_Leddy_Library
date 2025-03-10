@@ -3,6 +3,7 @@ package scene_creation;
 /* Copyright material for students working on assignments */
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.BorderLayout;
 import java.awt.GraphicsConfiguration;
 
@@ -14,7 +15,7 @@ import org.jogamp.java3d.utils.geometry.Sphere;
 import org.jogamp.java3d.utils.universe.SimpleUniverse;
 import org.jogamp.vecmath.*;
 
-import com.jogamp.newt.event.KeyListener;
+
 
 
 public class MainClass extends JPanel implements KeyListener {
@@ -28,6 +29,8 @@ public class MainClass extends JPanel implements KeyListener {
     private Vector3f position = new Vector3f();
     private final float MOVE_STEP = 0.2f;
     
+    
+    
     //Wall method
     private static TransformGroup define_wall(TransformGroup wall,  Vector3f vector) {
     	TransformGroup WallTG = new TransformGroup();
@@ -39,6 +42,45 @@ public class MainClass extends JPanel implements KeyListener {
  	    
  	    return WallTG;
     }
+    
+ // Helper method to create a single shelf positioned with a translation
+    private static TransformGroup createShelf(String textureFile, Vector3f translation) {
+        ShelfObject shelf = new ShelfObject(textureFile);
+        TransformGroup shelfTG = shelf.position_Object();
+        
+        // Create a TransformGroup for positioning the shelf
+        TransformGroup positionedShelfTG = new TransformGroup();
+        Transform3D translationTransform = new Transform3D();
+        translationTransform.setTranslation(translation);
+        positionedShelfTG.setTransform(translationTransform);
+        
+        // Add the shelf geometry as a child to the positioned transform group
+        positionedShelfTG.addChild(shelfTG);
+        
+        return positionedShelfTG;
+    }
+
+    // Method to create a group of shelves; numShelves and spacing can be adjusted
+    private static TransformGroup createShelves(int numShelves, float spacing, String textureFile) {
+        TransformGroup shelvesTG = new TransformGroup();
+        
+        // Calculate initial offset so that shelves are centered
+        float totalWidth = (numShelves - 1) * spacing;
+        float startX = -totalWidth / 2;
+        
+        for (int i = 0; i < numShelves; i++) {
+            // Calculate the x-position for the current shelf
+            float xPos = startX + i * spacing;
+            // Adjust y and z positions as needed (for example, y = shelf height above the floor)
+            Vector3f shelfPos = new Vector3f(xPos, 1f, 0f);
+            
+            // Create the shelf transform group and add it to the parent group
+            TransformGroup shelfTG = createShelf(textureFile, shelfPos);
+            shelvesTG.addChild(shelfTG);
+        }
+        return shelvesTG;
+    }
+
 	
 	/* a function to create the library */
 	private static TransformGroup create_Library() {
@@ -58,6 +100,7 @@ public class MainClass extends JPanel implements KeyListener {
 	    object3D[1] = new SquareShape("MarbleTexture.jpg",4f,1.5f,0.05f);                   // create Front and Back wall dimensions
 	    object3D[2] = new SquareShape("MarbleTexture.jpg",4f,1.5f,0.05f);                   // create Front and Back wall dimensions
 	    object3D[3] = new SquareShape("ImageEmrald.jpg",0.05f, 1.5f, 4f);                   // create Left and right wall dimensions
+	    //object3D[4] = new WallObject("FloorTexture.jpg");
 	    object3D[4] = new SquareShape("ImageEmrald.jpg",0.05f, 1.5f, 4f);                   // create Left and right wall dimensions
 	    
 	    // Front Wall translation group
@@ -73,18 +116,29 @@ public class MainClass extends JPanel implements KeyListener {
 	    TransformGroup rightWallTG = define_wall(object3D[4].position_Object(), new Vector3f(4f, 1.5f, 0));
 	    
 	    
-        object3D[5] = new SinglebookObject("FloorTexture.jpg");
+        //object3D[5] = new ShelfObject("FloorTexture.jpg");
+        
+	    //Create shelf objects
+        TransformGroup shelvesTG1 = createShelves(5, 1.5f, "FloorTexture.jpg");
+        TransformGroup shelvesTG2 = createShelves(5, 1.5f, "FloorTexture.jpg");
 
-	    
+        // Create a Transform3D for the z offset:
+        Transform3D zOffset = new Transform3D();
+        zOffset.setTranslation(new Vector3f(0.0f, 0.0f, 5.0f));  // Change '2.0f' to your desired z offset
+
+        // Apply the transformation to shelvesTG2:
+        shelvesTG2.setTransform(zOffset);
 	    
         //Creating the scene graph
-        object3D[0].add_Child(characterTG);
-	    libraryTG.addChild(object3D[0].position_Object());             // add floorTG to library TG
+        object3D[0].add_Child(shelvesTG1);                             // add the shelves
+        object3D[0].add_Child(shelvesTG2);
+        libraryTG.addChild(object3D[0].position_Object());             // add floorTG to library TG
 	    libraryTG.addChild(frontWallTG);                               // add frontWallTG to library TG
 	    libraryTG.addChild(backWallTG);                                // add backWallTG to library TG
 	    libraryTG.addChild(leftWallTG);                                // add leftWallTG to library TG
 	    libraryTG.addChild(rightWallTG);                               // add rightWallTG to library TG
-
+	    libraryTG.addChild(characterTG);                               // add character
+	    
 	    return libraryTG;
 	}
 
@@ -104,44 +158,9 @@ public class MainClass extends JPanel implements KeyListener {
 	 public MainClass(BranchGroup sceneBG) {
 	        GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
 	        Canvas3D canvas = new Canvas3D(config);
-	        canvas.setFocusable(true);  // ensure canvas receives key events
-	        
-	       
-//	        canvas.addKeyListener(new KeyAdapter() {  // Add key listener for pause/resume functionality
-//	            
-//	            public void keyPressed(KeyEvent e) {
-//	                char keyChar = e.getKeyChar();
-//	                switch (keyChar) {
-//	                    case 'z': 
-//	                    case 'Z':
-//	                        if (!powerOff) {  // Only allow toggling motor oscillation if fan is powered on
-//	                            if (!motorOscillationPaused) {
-//	                                alpha[1].pause();   // Pause the motor's oscillation
-//	                                motorOscillationPaused = true;
-//	                            } else {
-//	                                alpha[1].resume();  // Resume the motor's oscillation
-//	                                motorOscillationPaused = false;
-//	                            }
-//	                        }
-//	                        break;
-//	                    case 'x': 
-//	                    case 'X':
-//	                        if (!powerOff) {
-//	                            alpha[0].pause();  // Pause blade rotation
-//	                            alpha[1].pause();  // Pause motor oscillation
-//	                            powerOff = true;
-//	                            motorOscillationPaused = false;
-//	                        } else {
-//	                            alpha[0].resume(); // Resume blade rotation
-//	                            alpha[1].resume(); // Resume motor oscillation
-//	                            powerOff = false;
-//	                        }
-//	                        break;
-//	                    default:
-//	                        break;
-//	                }
-//	            }
-//	        });
+	        canvas.setFocusable(true);             // ensure canvas receives key events
+	        canvas.addKeyListener(this);           // add listener to this program
+	        add(canvas);
 	        
 	        SimpleUniverse su = new SimpleUniverse(canvas);
 	        CommonsSK.define_Viewer(su, new Point3d(0f, 13f, 0f)); //Change the eye to new Point3d(0f, 6f, 0f) to get birds eye view
@@ -153,7 +172,67 @@ public class MainClass extends JPanel implements KeyListener {
 	        frame.setVisible(true);
 	    }
 	 
-	  public void keyPressed(KeyEvent e) {
+	 
+	  //Movement
+//	 public Vector3f getPosition() {
+//		    return position;
+//		}
+//	 public BoundingSphere getCollisionBounds() {
+//		    // Assuming getPosition() returns a Vector3f for the object's center:
+//		    Vector3f pos = this.getPosition();
+//		    Point3d center = new Point3d(pos.x, pos.y, pos.z);
+//		    // Compute an appropriate radius (this is just an example calculation)
+//		    float radius = (float)Math.sqrt(Math.pow(4f/2,2) + Math.pow(1.5f/2,2) + Math.pow(0.05f/2,2));
+//		    return new BoundingSphere(center, (double)radius);
+//		}
+//	 
+//	 private boolean checkCollision(Vector3f newPos) {
+//		    // Convert Vector3f to Point3d for the center of the bounding sphere.
+//		    Point3d center = new Point3d(newPos.x, newPos.y, newPos.z);
+//		    BoundingSphere characterBounds = new BoundingSphere(center, (double)2);
+//		    
+//		    // Loop over each collidable object in object3D[]
+//		    for (int i = 1; i < object3D.length; i++) {
+//		        if (object3D[i] != null) {
+//		            // Each object should provide its own collision bounds.
+//		            BoundingSphere objBounds = object3D[i].getCollisionBounds();
+//		            if (objBounds != null && characterBounds.intersect(objBounds)) {
+//		                System.out.println("Collision detected with object index " + i);
+//		                return true;
+//		            }
+//		        }
+//		    }
+//		    return false;
+//		}
+
+//	 public void keyPressed(KeyEvent e) {
+//	        // Create a copy of the current position to test a new candidate position.
+//	        Vector3f potentialPos = new Vector3f(position);
+//	        switch(e.getKeyCode()){
+//	            case KeyEvent.VK_UP: 
+//	                potentialPos.z -= MOVE_STEP; 
+//	                break;
+//	            case KeyEvent.VK_DOWN: 
+//	                potentialPos.z += MOVE_STEP; 
+//	                break;
+//	            case KeyEvent.VK_LEFT: 
+//	                potentialPos.x -= MOVE_STEP; 
+//	                break;
+//	            case KeyEvent.VK_RIGHT: 
+//	                potentialPos.x += MOVE_STEP; 
+//	                break;
+//	        }
+//	        // Only update the position if there is no collision.
+//	        if (!checkCollision(potentialPos)) {
+//	            position.set(potentialPos);
+//	            updatePosition();
+//	        } else {
+//	            System.out.println("Movement blocked due to collision.");
+//	        }
+//	    }
+
+	 @Override
+	    public void keyPressed(KeyEvent e) {
 	        switch(e.getKeyCode()){
 	            case KeyEvent.VK_UP: position.z -= MOVE_STEP; break;
 	            case KeyEvent.VK_DOWN: position.z += MOVE_STEP; break;
@@ -162,7 +241,7 @@ public class MainClass extends JPanel implements KeyListener {
 	        }
 	        updatePosition();
 	    }
-
+	 
 	    private void updatePosition() {
 	        Transform3D transform = new Transform3D();
 	        transform.setTranslation(position);
@@ -176,20 +255,20 @@ public class MainClass extends JPanel implements KeyListener {
 		frame.getContentPane().add(new MainClass(create_Scene()));  // start the program
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
-
+	@Override
+	public void keyTyped(KeyEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
 
 	@Override
-	public void keyPressed(com.jogamp.newt.event.KeyEvent arg0) {
+	public void keyReleased(KeyEvent e) {
 		// TODO Auto-generated method stub
 		
 	}
 
 
-	@Override
-	public void keyReleased(com.jogamp.newt.event.KeyEvent arg0) {
-		// TODO Auto-generated method stub
-		
-	}
+	
 }
 
 

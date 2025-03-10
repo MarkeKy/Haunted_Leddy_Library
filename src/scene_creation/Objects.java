@@ -82,7 +82,7 @@ public abstract class Objects {
 		return texture;
 	}
 	
-	protected void obj_Appearance() {		
+	protected Appearance obj_Appearance() {		
 		Material mtl = new Material();                     // define material's attributes
 		mtl.setShininess(shine);
 		mtl.setAmbientColor(mtl_clr[0]);                   // use them to define different materials
@@ -108,20 +108,38 @@ public abstract class Objects {
 		Transform3D transMap = new Transform3D();
 		transMap.setScale(scale);
 		textureAttrib.setTextureTransform(transMap);
-		
+		return app;
 	}
+
+	// In your abstract class Objects, add the following method:
+	public BoundingSphere getCollisionBounds() {
+	    // If your object has dimensions x, y, z (for example, as used in SquareShape),
+	    // a rough bounding sphere radius can be computed as half the diagonal:
+	    double radius = Math.sqrt(Math.pow(x / 2.0, 2) + Math.pow(y / 2.0, 2) + Math.pow(z / 2.0, 2));
+	    
+	    // Use the 'post' vector as the center. Ensure post is initialized!
+	    if (post == null) {
+	        post = new Vector3f(0f, 0f, 0f);
+	    }
+	    Point3d center = new Point3d(post.x, post.y, post.z);
+	    
+	    return new BoundingSphere(center, radius);
+	}
+
+	
+	
 }
 
 
 //Classes for each 3D objects (Floor, Ceiling, etc.)
 
-class FloorObject extends Objects {
-	public FloorObject(String file_name) {                 //Filename for the object
+class WallObject extends Objects {
+	public WallObject(String file_name) {                 //Filename for the object
 		super();
 		this.file_name = file_name;
-		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
-		transform_Object("Singlebook1");                     // set transformation to 'objTG' and load object file
+		scale = 0d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0f, 0f, 0);         // location to connect "FanSwitch" with "FanStand"
+		transform_Object("door");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
@@ -139,8 +157,8 @@ class ShelfObject extends Objects {
 	public ShelfObject(String file_name) {                 //Filename for the object
 		super();
 		this.file_name = file_name;
-		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
+		scale = 2d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0f, 0f, -2.5f);                // location to connect "FanSwitch" with "FanStand"
 		transform_Object("EmptySelf");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
