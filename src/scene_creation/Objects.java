@@ -102,6 +102,13 @@ public abstract class Objects {
 		TextureAttributes textureAttrib= new TextureAttributes();
 		textureAttrib.setTextureMode(TextureAttributes.REPLACE);
 		app.setTextureAttributes(textureAttrib);
+		
+		float scl = 4f;                                  // need to rearrange the four quarters
+		Vector3d scale = new Vector3d(scl, scl, scl);
+		Transform3D transMap = new Transform3D();
+		transMap.setScale(scale);
+		textureAttrib.setTextureTransform(transMap);
+		
 	}
 }
 
