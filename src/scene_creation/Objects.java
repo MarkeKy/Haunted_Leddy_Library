@@ -24,6 +24,7 @@ public abstract class Objects {
 	protected Shape3D obj_shape;
 	protected static String obj_name; //For FanBlades and Guard. Setting appearance for multiple parts of an object
 	protected String file_name; //Filename for texture string
+	protected float x,y,z;    //Dimension for square shape
     
 	public abstract TransformGroup position_Object();      // need to be defined in derived classes
 	public abstract void add_Child(TransformGroup nextTG);
@@ -153,7 +154,7 @@ class GroupbooksObject extends Objects {
 		this.file_name = file_name;
 		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
-		transform_Object("Groupbooks1");                     // set transformation to 'objTG' and load object file
+		transform_Object("Singlebook1");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
@@ -188,7 +189,8 @@ class SinglebookObject extends Objects {
 }
 
 class SquareShape extends Objects {
-	public SquareShape(String file_name) {
+	public SquareShape(String file_name, float x, float y, float z) { //Define the texture file and the dimensions for the box
+		this.x = x; this.y = y; this.z = z;                           //Initialize the values
 		this.file_name = file_name;
 		Transform3D translator = new Transform3D();
 		translator.setTranslation(new Vector3d(0.0, -0.54, 0));
@@ -209,7 +211,7 @@ class SquareShape extends Objects {
 		PolygonAttributes pa = new PolygonAttributes();
 		pa.setCullFace(PolygonAttributes.CULL_NONE);       // show both sides
 		app.setPolygonAttributes(pa);
-		return new Box(4f, 0.01f, 4f, Primitive.GENERATE_NORMALS, app);
+		return new Box(x, y, z, Primitive.GENERATE_NORMALS, app);
 	}
 	
 	public void add_Child(TransformGroup nextTG) {

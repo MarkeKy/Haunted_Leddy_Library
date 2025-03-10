@@ -27,12 +27,24 @@ public class MainClass extends JPanel implements KeyListener {
 	private static TransformGroup characterTG;
     private Vector3f position = new Vector3f();
     private final float MOVE_STEP = 0.2f;
-
+    
+    //Wall method
+    private static TransformGroup define_wall(TransformGroup wall,  Vector3f vector) {
+    	TransformGroup WallTG = new TransformGroup();
+ 	    Transform3D WallTrans = new Transform3D();
+ 	    
+ 	    WallTrans.setTranslation(vector);
+ 	    WallTG.setTransform(WallTrans);
+ 	    WallTG.addChild(wall);
+ 	    
+ 	    return WallTG;
+    }
 	
 	/* a function to create the library */
 	private static TransformGroup create_Library() {
 	    TransformGroup libraryTG = new TransformGroup();
 	    
+	    //Defining the transformation groups and objects of the scene graph
 	    characterTG = new TransformGroup();
         characterTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 
@@ -41,13 +53,38 @@ public class MainClass extends JPanel implements KeyListener {
         Sphere character = new Sphere(0.2f, sphereAppearance);
         
         characterTG.addChild(character);
-        object3D[1] = new SinglebookObject("FloorTexture.jpg");
         
-	    object3D[0] = new SquareShape("ImageEmrald.jpg");                   // create "FloorObject"
+	    object3D[0] = new SquareShape("ImageEmrald.jpg",4f,0.01f,4f);                   // create "FloorObject"
+	    object3D[1] = new SquareShape("MarbleTexture.jpg",4f,1.5f,0.05f);                   // create Front and Back wall dimensions
+	    object3D[2] = new SquareShape("MarbleTexture.jpg",4f,1.5f,0.05f);                   // create Front and Back wall dimensions
+	    object3D[3] = new SquareShape("ImageEmrald.jpg",0.05f, 1.5f, 4f);                   // create Left and right wall dimensions
+	    object3D[4] = new SquareShape("ImageEmrald.jpg",0.05f, 1.5f, 4f);                   // create Left and right wall dimensions
 	    
-	    object3D[0].add_Child(object3D[1].position_Object());
+	    // Front Wall translation group
+	    TransformGroup frontWallTG = define_wall(object3D[1].position_Object(), new Vector3f(0f, 1.5f, 4f));
+	    
+	    // Back Wall translation group
+	    TransformGroup backWallTG = define_wall(object3D[2].position_Object(), new Vector3f(0f, 1.5f, -4f));
+	    
+	    // Left Wall translation group
+	    TransformGroup leftWallTG = define_wall(object3D[3].position_Object(), new Vector3f(-4f, 1.5f, 0));
+	    
+	    // Left Wall translation group
+	    TransformGroup rightWallTG = define_wall(object3D[4].position_Object(), new Vector3f(4f, 1.5f, 0));
+	    
+	    
+        object3D[5] = new SinglebookObject("FloorTexture.jpg");
+
+	    
+	    
+        //Creating the scene graph
         object3D[0].add_Child(characterTG);
-	    libraryTG = object3D[0].position_Object();             // set fanTG to FanStand's transform group
+	    libraryTG.addChild(object3D[0].position_Object());             // add floorTG to library TG
+	    libraryTG.addChild(frontWallTG);                               // add frontWallTG to library TG
+	    libraryTG.addChild(backWallTG);                                // add backWallTG to library TG
+	    libraryTG.addChild(leftWallTG);                                // add leftWallTG to library TG
+	    libraryTG.addChild(rightWallTG);                               // add rightWallTG to library TG
+
 	    return libraryTG;
 	}
 
@@ -107,7 +144,7 @@ public class MainClass extends JPanel implements KeyListener {
 //	        });
 	        
 	        SimpleUniverse su = new SimpleUniverse(canvas);
-	        CommonsSK.define_Viewer(su, new Point3d(0f, 1f, 6f));
+	        CommonsSK.define_Viewer(su, new Point3d(0f, 13f, 0f)); //Change the eye to new Point3d(0f, 6f, 0f) to get birds eye view
 	        sceneBG.compile();
 	        su.addBranchGraph(sceneBG);
 	        setLayout(new BorderLayout());

@@ -95,8 +95,8 @@ public class CommonsSK extends JPanel {
 	/* a function to position viewer at 'eye' location */
 	public static void define_Viewer(SimpleUniverse simple_U, Point3d eye) {
 	    TransformGroup viewTransform = simple_U.getViewingPlatform().getViewPlatformTransform();
-		Point3d center = new Point3d(0, 0, 0);             // define the point where the eye looks at
-		Vector3d up = new Vector3d(0, 1, 0);               // define camera's up direction
+		Point3d center = new Point3d(0, 0, 0.2f);             // define the point where the eye looks at
+		Vector3d up = new Vector3d(0, 0, -1);               // define camera's up direction
 		Transform3D view_TM = new Transform3D();
 		view_TM.lookAt(eye, center, up);                   // look at 'center' from 'eye'
 		view_TM.invert();
@@ -132,11 +132,11 @@ public class CommonsSK extends JPanel {
 		frame.setVisible(true);
 	}
 
-	public static void main(String[] args) {
-		frame = new JFrame("SK's Common File");            // NOTE: change XY to student's initials
-		frame.getContentPane().add(new CommonsSK(create_Scene()));  // create an instance of the class
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	}
+//	public static void main(String[] args) {
+//		frame = new JFrame("SK's Common File");            // NOTE: change XY to student's initials
+//		frame.getContentPane().add(new CommonsSK(create_Scene()));  // create an instance of the class
+//		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//	}
 }
 
 
