@@ -20,15 +20,24 @@ public class MainClass extends JPanel {
 	private static JFrame frame;
 
 	private static final int OBJ_NUM = 6; //+4 objects (Shaft, Motor, Blade, Guard)
-	private static Objects[] object3D = new Objects[1];  //Number of objects
+	private static Objects[] object3D = new Objects[OBJ_NUM];  //Number of objects
 
 	
 	/* a function to create the library */
 	private static TransformGroup create_Library() {
 	    TransformGroup libraryTG = new TransformGroup();
 
-	    object3D[0] = new SquareShape("ImageEmrald.jpg");                   // create "FloorObject"
+	    object3D[0] = new SquareShape("FloorTexture.jpg"); // create "FloorObject"
+	    object3D[1] = new GroupbooksObject("ImageEmrald.jpg");
+	    object3D[2] = new ShelfObject("ImageEmrald.jpg");
+	    
+	    object3D[2].add_Child(object3D[1].position_Object());
+	    
+	    object3D[0].add_Child(object3D[2].position_Object());
+	    
+	    
 	    libraryTG = object3D[0].position_Object();             // set fanTG to FanStand's transform group
+	    
 	    return libraryTG;
 	}
 

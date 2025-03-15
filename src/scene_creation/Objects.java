@@ -107,8 +107,30 @@ public abstract class Objects {
 
 //Classes for each 3D objects (Floor, Ceiling, etc.)
 
-class FloorObject extends Objects {
+/*class FloorObject extends Objects {
 	public FloorObject(String file_name) {                 //Filename for the object
+		super();
+		this.file_name = file_name;
+		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
+		transform_Object("Singlebook1");                     // set transformation to 'objTG' and load object file
+		obj_Appearance();                                  // set appearance after converting object node to Shape3D
+	}
+
+	public TransformGroup position_Object() {
+		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
+		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
+	}
+}*/
+
+
+
+class ShelfObject extends Objects {
+	public ShelfObject(String file_name) {                 //Filename for the object
 		super();
 		this.file_name = file_name;
 		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
@@ -127,32 +149,12 @@ class FloorObject extends Objects {
 	}
 }
 
-class ShelfObject extends Objects {
-	public ShelfObject(String file_name) {                 //Filename for the object
-		super();
-		this.file_name = file_name;
-		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
-		transform_Object("EmptySelf");                     // set transformation to 'objTG' and load object file
-		obj_Appearance();                                  // set appearance after converting object node to Shape3D
-	}
-
-	public TransformGroup position_Object() {
-		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
-		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
-	}
-
-	public void add_Child(TransformGroup nextTG) {
-		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
-	}
-}
-
 class GroupbooksObject extends Objects {
 	public GroupbooksObject(String file_name) {                 //Filename for the object
 		super();
 		this.file_name = file_name;
-		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
+		scale = 0.3d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0f, 0f, 0f);         // location to connect "FanSwitch" with "FanStand"
 		transform_Object("Groupbooks1");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}

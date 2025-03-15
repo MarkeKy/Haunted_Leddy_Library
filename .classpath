@@ -6,10 +6,10 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/java3d-core.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/java3d-examples.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/java3d-utils.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/jogamp-fat.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/vecmath.jar"/>
+	<classpathentry kind="lib" path="/Users/khaliduni/Desktop/Jars4Java3D/java3d-core.jar"/>
+	<classpathentry kind="lib" path="/Users/khaliduni/Desktop/Jars4Java3D/java3d-examples.jar"/>
+	<classpathentry kind="lib" path="/Users/khaliduni/Desktop/Jars4Java3D/java3d-utils.jar"/>
+	<classpathentry kind="lib" path="/Users/khaliduni/Desktop/Jars4Java3D/jogamp-fat.jar"/>
+	<classpathentry kind="lib" path="/Users/khaliduni/Desktop/Jars4Java3D/vecmath.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
