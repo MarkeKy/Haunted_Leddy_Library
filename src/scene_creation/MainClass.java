@@ -45,8 +45,8 @@ public class MainClass extends JPanel implements KeyListener{
     
  // Helper method to create a single shelf positioned with a translation
     private static TransformGroup createShelf(String textureFile, Vector3f translation) {
-        ShelfObject shelf = new ShelfObject(textureFile);
-        TransformGroup shelfTG = shelf.position_Object();
+        ShelfObject shelf = new ShelfObject(textureFile);  //Define shelf object
+        TransformGroup ShelfTG = shelf.position_Object();
         
         // Create a TransformGroup for positioning the shelf
         TransformGroup positionedShelfTG = new TransformGroup();
@@ -54,8 +54,13 @@ public class MainClass extends JPanel implements KeyListener{
         translationTransform.setTranslation(translation);
         positionedShelfTG.setTransform(translationTransform);
         
+        //Add Books to shelf
+        GroupbooksObject books = new GroupbooksObject(textureFile,"Groupbooks1");  //Define book object
+        
+        ShelfTG.addChild(books.position_Object());
         // Add the shelf geometry as a child to the positioned transform group
-        positionedShelfTG.addChild(shelfTG);
+        positionedShelfTG.addChild(ShelfTG);
+        
         
         return positionedShelfTG;
     }
@@ -179,7 +184,7 @@ public class MainClass extends JPanel implements KeyListener{
 	        add(canvas);
 	        
 	        SimpleUniverse su = new SimpleUniverse(canvas);
-	        CommonsSK.define_Viewer(su, new Point3d(0f, 13f, 0f)); //Change the eye to new Point3d(0f, 6f, 0f) to get birds eye view
+	        CommonsSK.define_Viewer(su, new Point3d(0f, -13f, 0f)); //Change the eye to new Point3d(0f, 6f, 0f) to get birds eye view
 	        sceneBG.compile();
 	        su.addBranchGraph(sceneBG);
 	        setLayout(new BorderLayout());
