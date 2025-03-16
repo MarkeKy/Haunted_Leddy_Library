@@ -4,6 +4,7 @@ package scene_creation;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.Iterator;
 import java.awt.BorderLayout;
 import java.awt.GraphicsConfiguration;
 
@@ -18,18 +19,17 @@ import org.jogamp.vecmath.*;
 
 
 
-public class MainClass extends JPanel implements KeyListener {
+public class MainClass extends JPanel implements KeyListener{
 	
 	private static final long serialVersionUID = 1L;
 	private static JFrame frame;
-
 	private static final int OBJ_NUM = 6; //+4 objects (Shaft, Motor, Blade, Guard)
 	private static Objects[] object3D = new Objects[OBJ_NUM];  //Number of objects
 	private static TransformGroup characterTG;
-    private Vector3f position = new Vector3f();
+    private static Vector3f position = new Vector3f();         //Update position of the character
+    private static Vector3f lastSafePosition = new Vector3f();   // Last non-colliding position
     private final float MOVE_STEP = 0.2f;
-    
-    
+    private static boolean colliding = false;                  //Flag to stop movement if collision has occurred
     
     //Wall method
     private static TransformGroup define_wall(TransformGroup wall,  Vector3f vector) {
@@ -72,7 +72,7 @@ public class MainClass extends JPanel implements KeyListener {
             // Calculate the x-position for the current shelf
             float xPos = startX + i * spacing;
             // Adjust y and z positions as needed (for example, y = shelf height above the floor)
-            Vector3f shelfPos = new Vector3f(xPos, 1f, 0f);
+            Vector3f shelfPos = new Vector3f(xPos, 2f, 0f);
             
             // Create the shelf transform group and add it to the parent group
             TransformGroup shelfTG = createShelf(textureFile, shelfPos);
@@ -95,11 +95,27 @@ public class MainClass extends JPanel implements KeyListener {
         Sphere character = new Sphere(0.2f, sphereAppearance);
         
         characterTG.addChild(character);
+        Transform3D Offset1 = new Transform3D();
+        position.set(0.0f, 2f, 0.0f);                                                  
+        Offset1.setTranslation(new Vector3f(0f, 2f, 0.0f));                              //Set the starting position of the character
+        characterTG.setTransform(Offset1);                  
+        
+        lastSafePosition.set(position);
+        
+        // Attach the collision behavior to the character.
+        // (Assuming the sphere's geometry is its first child.)
+        Shape3D characterShape = (Shape3D) character.getChild(0);
+        CollisionDetectCharacter cds = new CollisionDetectCharacter(characterShape);  //Collision Detection
+        cds.setSchedulingBounds(new BoundingSphere(new Point3d(0,0,0), 100));
+        characterTG.addChild(cds);
         
 	    object3D[0] = new SquareShape("ImageEmrald.jpg",4f,0.01f,4f);                   // create "FloorObject"
 	    object3D[1] = new SquareShape("MarbleTexture.jpg",4f,1.5f,0.05f);                   // create Front and Back wall dimensions
 	    object3D[2] = new SquareShape("MarbleTexture.jpg",4f,1.5f,0.05f);                   // create Front and Back wall dimensions
-	    object3D[3] = new SquareShape("ImageEmrald.jpg",0.05f, 1.5f, 4f);                   // create Left and right wall dimensions
+	    object3D[3] = new WallObject("ImageEmrald.jpg");                   // create Left and right wall dimensions
+	    
+	    Transform3D zAxis = new Transform3D();
+	    zAxis.rotY(Math.PI/2); //Rotate along the z axis
 	    //object3D[4] = new WallObject("FloorTexture.jpg");
 	    object3D[4] = new SquareShape("ImageEmrald.jpg",0.05f, 1.5f, 4f);                   // create Left and right wall dimensions
 	    
@@ -111,7 +127,7 @@ public class MainClass extends JPanel implements KeyListener {
 	    
 	    // Left Wall translation group
 	    TransformGroup leftWallTG = define_wall(object3D[3].position_Object(), new Vector3f(-4f, 1.5f, 0));
-	    
+	    leftWallTG.setTransform(zAxis);
 	    // Left Wall translation group
 	    TransformGroup rightWallTG = define_wall(object3D[4].position_Object(), new Vector3f(4f, 1.5f, 0));
 	    
@@ -123,11 +139,11 @@ public class MainClass extends JPanel implements KeyListener {
         TransformGroup shelvesTG2 = createShelves(5, 1.5f, "FloorTexture.jpg");
 
         // Create a Transform3D for the z offset:
-        Transform3D zOffset = new Transform3D();
-        zOffset.setTranslation(new Vector3f(0.0f, 0.0f, 5.0f));  // Change '2.0f' to your desired z offset
+        Transform3D Offset = new Transform3D();
+        Offset.setTranslation(new Vector3f(0.0f, 0.0f, 5.0f));  // Change '2.0f' to your desired z offset
 
         // Apply the transformation to shelvesTG2:
-        shelvesTG2.setTransform(zOffset);
+        shelvesTG2.setTransform(Offset);
 	    
         //Creating the scene graph
         object3D[0].add_Child(shelvesTG1);                             // add the shelves
@@ -137,7 +153,7 @@ public class MainClass extends JPanel implements KeyListener {
 	    libraryTG.addChild(backWallTG);                                // add backWallTG to library TG
 	    libraryTG.addChild(leftWallTG);                                // add leftWallTG to library TG
 	    libraryTG.addChild(rightWallTG);                               // add rightWallTG to library TG
-	    libraryTG.addChild(characterTG);                               // add character
+	    libraryTG.addChild(characterTG);
 	    
 	    return libraryTG;
 	}
@@ -173,80 +189,113 @@ public class MainClass extends JPanel implements KeyListener {
 	    }
 	 
 	 
-	  //Movement
-//	 public Vector3f getPosition() {
-//		    return position;
-//		}
-//	 public BoundingSphere getCollisionBounds() {
-//		    // Assuming getPosition() returns a Vector3f for the object's center:
-//		    Vector3f pos = this.getPosition();
-//		    Point3d center = new Point3d(pos.x, pos.y, pos.z);
-//		    // Compute an appropriate radius (this is just an example calculation)
-//		    float radius = (float)Math.sqrt(Math.pow(4f/2,2) + Math.pow(1.5f/2,2) + Math.pow(0.05f/2,2));
-//		    return new BoundingSphere(center, (double)radius);
-//		}
-//	 
-//	 private boolean checkCollision(Vector3f newPos) {
-//		    // Convert Vector3f to Point3d for the center of the bounding sphere.
-//		    Point3d center = new Point3d(newPos.x, newPos.y, newPos.z);
-//		    BoundingSphere characterBounds = new BoundingSphere(center, (double)2);
-//		    
-//		    // Loop over each collidable object in object3D[]
-//		    for (int i = 1; i < object3D.length; i++) {
-//		        if (object3D[i] != null) {
-//		            // Each object should provide its own collision bounds.
-//		            BoundingSphere objBounds = object3D[i].getCollisionBounds();
-//		            if (objBounds != null && characterBounds.intersect(objBounds)) {
-//		                System.out.println("Collision detected with object index " + i);
-//		                return true;
-//		            }
-//		        }
-//		    }
-//		    return false;
-//		}
-
-//	 public void keyPressed(KeyEvent e) {
-//	        // Create a copy of the current position to test a new candidate position.
-//	        Vector3f potentialPos = new Vector3f(position);
-//	        switch(e.getKeyCode()){
-//	            case KeyEvent.VK_UP: 
-//	                potentialPos.z -= MOVE_STEP; 
-//	                break;
-//	            case KeyEvent.VK_DOWN: 
-//	                potentialPos.z += MOVE_STEP; 
-//	                break;
-//	            case KeyEvent.VK_LEFT: 
-//	                potentialPos.x -= MOVE_STEP; 
-//	                break;
-//	            case KeyEvent.VK_RIGHT: 
-//	                potentialPos.x += MOVE_STEP; 
-//	                break;
-//	        }
-//	        // Only update the position if there is no collision.
-//	        if (!checkCollision(potentialPos)) {
-//	            position.set(potentialPos);
-//	            updatePosition();
-//	        } else {
-//	            System.out.println("Movement blocked due to collision.");
-//	        }
-//	    }
-
-	 @Override
-	    public void keyPressed(KeyEvent e) {
-	        switch(e.getKeyCode()){
-	            case KeyEvent.VK_UP: position.z -= MOVE_STEP; break;
-	            case KeyEvent.VK_DOWN: position.z += MOVE_STEP; break;
-	            case KeyEvent.VK_LEFT: position.x -= MOVE_STEP; break;
-	            case KeyEvent.VK_RIGHT: position.x += MOVE_STEP; break;
-	        }
+	  //Collision Detection
+	 public void revertToSafePosition() {
+	        // Reset the character's position to the last safe position.
+	        position.set(lastSafePosition);
 	        updatePosition();
+	        System.out.println("Reverted to safe position: " + lastSafePosition);
 	    }
-	 
-	    private void updatePosition() {
+	    
+	   
+	    public void updateSafePosition() {
+	        // Update the last safe position to the current position.
+	        lastSafePosition.set(position);
+	        System.out.println("Updated safe position: " + position);
+	    }
+	    
+	    // Get the current position.
+	    public Vector3f getPosition() {
+	        return position;
+	    }
+	    
+	    private static void updatePosition() {
 	        Transform3D transform = new Transform3D();
 	        transform.setTranslation(position);
 	        characterTG.setTransform(transform);
 	    }
+	    
+	    // Movement via key presses.
+	    @Override
+	    public void keyPressed(KeyEvent e) {
+	        // If collision is active, ignore further key input.
+	        if (colliding) {
+	            System.out.println("Movement ignored while colliding.");
+	            return;
+	        }
+	        
+	        // Save the current (safe) position only if not colliding.
+	        // (This represents the last non-colliding state.)
+	        lastSafePosition.set(position);
+	        
+	        // Calculate new position.
+	        Vector3f newPos = new Vector3f(position);
+	        switch(e.getKeyCode()){
+	            case KeyEvent.VK_UP: 
+	                newPos.z -= MOVE_STEP; 
+	                break;
+	            case KeyEvent.VK_DOWN: 
+	                newPos.z += MOVE_STEP; 
+	                break;
+	            case KeyEvent.VK_LEFT: 
+	                newPos.x -= MOVE_STEP; 
+	                break;
+	            case KeyEvent.VK_RIGHT: 
+	                newPos.x += MOVE_STEP; 
+	                break;
+	        }
+	        position.set(newPos);
+	        updatePosition();
+	    }
+
+	    
+	    private static class CollisionDetectCharacter extends Behavior {
+	        private Shape3D shape;
+	        private WakeupOnCollisionEntry wEnter;
+	        private WakeupOnCollisionExit wExit;
+	        
+	        public CollisionDetectCharacter(Shape3D s) {
+	            shape = s;
+	        }
+	        
+	        @Override
+	        public void initialize() {
+	            wEnter = new WakeupOnCollisionEntry(shape, WakeupOnCollisionEntry.USE_GEOMETRY);
+	            wExit  = new WakeupOnCollisionExit(shape, WakeupOnCollisionExit.USE_GEOMETRY);
+	            wakeupOn(new WakeupOr(new WakeupCriterion[] { wEnter, wExit }));
+	        }
+	        
+	        @Override
+	        public void processStimulus(Iterator<WakeupCriterion> criteria) {
+	            boolean collisionEntry = false;
+	            boolean collisionExit  = false;
+	            
+	            while (criteria.hasNext()) {
+	                WakeupCriterion wc = criteria.next();
+	                if (wc instanceof WakeupOnCollisionEntry)
+	                    collisionEntry = true;
+	                if (wc instanceof WakeupOnCollisionExit)
+	                    collisionExit = true;
+	            }
+	            
+	            if (collisionEntry) {
+	                colliding = true;  // lock movement
+	                // Revert to last safe position.
+	                position.set(lastSafePosition);
+	                updatePosition();
+	                System.out.println("Collision detected: reverting to safe position: " + lastSafePosition);
+	            }
+	            if (collisionExit) {
+	                colliding = false; // allow movement again
+	                // Update lastSafePosition to the current position.
+	                lastSafePosition.set(position);
+	                System.out.println("Collision resolved: updating safe position to: " + position);
+	            }
+	            
+	            wakeupOn(new WakeupOr(new WakeupCriterion[] { wEnter, wExit }));
+	        }
+	    }
+
 
        
 

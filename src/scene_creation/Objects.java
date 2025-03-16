@@ -137,9 +137,9 @@ class WallObject extends Objects {
 	public WallObject(String file_name) {                 //Filename for the object
 		super();
 		this.file_name = file_name;
-		scale = 0d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0f, 0f, 0);         // location to connect "FanSwitch" with "FanStand"
-		transform_Object("door");                     // set transformation to 'objTG' and load object file
+		scale = 4d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0.05f, 1.5f, -4f);                // Define the location of the wall object
+		transform_Object("DoorOpeningWall");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
