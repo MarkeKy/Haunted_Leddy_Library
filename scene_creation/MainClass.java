@@ -19,8 +19,8 @@ public class MainClass extends JPanel implements KeyListener {
 	private static final long serialVersionUID = 1L;
 	private static JFrame frame;
 
-	private static final int OBJ_NUM = 6; // +4 objects (Shaft, Motor, Blade, Guard)
-	private static Objects[] object3D = new Objects[OBJ_NUM];  // Number of objects
+	private static final int OBJ_NUM = 6;
+	private static Objects[] object3D = new Objects[OBJ_NUM];
 	private static TransformGroup characterTG;
 
 	// Character position used for movement
@@ -28,8 +28,8 @@ public class MainClass extends JPanel implements KeyListener {
 	private final float MOVE_STEP = 0.2f;
 
 	// For controlling camera look (first-person orientation)
-	private float yaw = 0.0f;   // rotation around Y axis (left/right)
-	private float pitch = 0.0f; // rotation around X axis (up/down)
+	private float yaw = 0.0f;   // Rotation around Y axis (left/right)
+	private float pitch = 0.0f; // Rotation around X axis (up/down)
 
 	// For mouse motion tracking
 	private int lastMouseX = -1, lastMouseY = -1;
@@ -85,6 +85,7 @@ public class MainClass extends JPanel implements KeyListener {
 		characterTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 		Appearance sphereAppearance = new Appearance();
 		sphereAppearance.setMaterial(new Material());
+		// The sphere represents the character.
 		Sphere character = new Sphere(0.2f, sphereAppearance);
 		characterTG.addChild(character);
 
@@ -141,10 +142,9 @@ public class MainClass extends JPanel implements KeyListener {
 		viewTG = su.getViewingPlatform().getViewPlatformTransform();
 		characterTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 
-		// Set initial camera at the character's eye-level.
+		// Set the initial view transform so the camera is exactly at the sphere's center.
 		Transform3D initialView = new Transform3D();
-		Vector3f eyeLevelPos = new Vector3f(position.x, position.y + 0.2f, position.z);
-		initialView.setTranslation(eyeLevelPos);
+		initialView.setTranslation(new Vector3f(position.x, position.y, position.z));
 		viewTG.setTransform(initialView);
 
 		// Add a mouse motion listener to update the look direction.
@@ -171,12 +171,11 @@ public class MainClass extends JPanel implements KeyListener {
 				lastMouseX = x;
 				lastMouseY = y;
 
-				// Sensitivity factor for smoother control.
 				float sensitivity = 0.005f;
 				yaw   += deltaX * sensitivity;
 				pitch += deltaY * sensitivity;
 
-				// Clamp pitch to avoid extreme up/down angles.
+				// Clamp pitch so you can't flip over.
 				float pitchLimit = (float)Math.toRadians(89);
 				if (pitch > pitchLimit) {
 					pitch = pitchLimit;
@@ -197,48 +196,83 @@ public class MainClass extends JPanel implements KeyListener {
 		frame.setVisible(true);
 	}
 
-	// --- KeyListener Methods for Movement ---
+	// --- KeyListener Methods for FPP Movement ---
 	@Override
 	public void keyPressed(KeyEvent e) {
+		float moveX = 0, moveY = 0, moveZ = 0;
+
+		// For a typical Java 3D FPP setup, the default view direction is along -Z.
+		// So we define the forward vector accordingly.
 		switch(e.getKeyCode()){
-			case KeyEvent.VK_UP:    position.z -= MOVE_STEP; break;
-			case KeyEvent.VK_DOWN:  position.z += MOVE_STEP; break;
-			case KeyEvent.VK_LEFT:  position.x -= MOVE_STEP; break;
-			case KeyEvent.VK_RIGHT: position.x += MOVE_STEP; break;
+			case KeyEvent.VK_W:
+			case KeyEvent.VK_UP:
+				// Forward vector: note the negative Z component.
+				moveX = -(float)(Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
+				moveY = (float)(Math.sin(pitch)) * MOVE_STEP;
+				moveZ = -(float)(Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
+				break;
+			case KeyEvent.VK_S:
+			case KeyEvent.VK_DOWN:
+				// Backward: the inverse of forward.
+				moveX = (float)(Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
+				moveY = -(float)(Math.sin(pitch)) * MOVE_STEP;
+				moveZ = (float)(Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
+				break;
+			case KeyEvent.VK_A:
+			case KeyEvent.VK_LEFT:
+				// Strafe left (perpendicular to forward).
+				moveX = -(float)Math.cos(yaw) * MOVE_STEP;
+				moveZ = -(float)Math.sin(yaw) * MOVE_STEP;
+				break;
+			case KeyEvent.VK_D:
+			case KeyEvent.VK_RIGHT:
+				// Strafe right.
+				moveX = (float)Math.cos(yaw) * MOVE_STEP;
+				moveZ = (float)Math.sin(yaw) * MOVE_STEP;
+				break;
 		}
+
+		// Update the sphere's (character's) position.
+		position.x += moveX;
+		position.y += moveY;
+		position.z += moveZ;
+
 		updatePosition();
 		updateLook();
-	}
-
-	// Updates the character's transform.
-	private void updatePosition() {
-		Transform3D transform = new Transform3D();
-		transform.setTranslation(position);
-		characterTG.setTransform(transform);
-	}
-
-	// --- Updates the view transform based on current yaw, pitch, and position ---
-	private void updateLook() {
-		Transform3D pitchRot = new Transform3D();
-		pitchRot.rotX(pitch);
-		Transform3D yawRot = new Transform3D();
-		yawRot.rotY(yaw);
-		yawRot.mul(pitchRot);
-
-		// Extract the rotation as a Matrix3f.
-		Matrix3f rotMatrix = new Matrix3f();
-		yawRot.get(rotMatrix);
-
-		// Eye-level position (adding an offset on Y).
-		Vector3f eyePos = new Vector3f(position.x, position.y + 0.2f, position.z);
-		Transform3D viewTransform = new Transform3D(rotMatrix, eyePos, 1.0f);
-		viewTG.setTransform(viewTransform);
 	}
 
 	@Override
 	public void keyTyped(KeyEvent e) { }
 	@Override
 	public void keyReleased(KeyEvent e) { }
+
+	// Updates the sphere's transform.
+	private void updatePosition() {
+		Transform3D transform = new Transform3D();
+		transform.setTranslation(position);
+		characterTG.setTransform(transform);
+	}
+
+	// Updates the view transform so the camera stays inside the sphere.
+	// Here we combine the translation (to the sphere’s center) with the rotation (from yaw and pitch).
+	private void updateLook() {
+		// Build the rotation transform.
+		Transform3D rotation = new Transform3D();
+		rotation.rotY(yaw);
+		Transform3D pitchRot = new Transform3D();
+		pitchRot.rotX(pitch);
+		rotation.mul(pitchRot); // rotation = R_yaw * R_pitch
+
+		// Build the translation transform.
+		Transform3D translation = new Transform3D();
+		translation.setTranslation(new Vector3f(position.x, position.y+1.0f, position.z));
+
+		// Combine: viewTransform = translation * rotation.
+		// This ensures that the camera is first placed at the sphere's center, then rotated.
+		Transform3D viewTransform = new Transform3D();
+		viewTransform.mul(translation, rotation);
+		viewTG.setTransform(viewTransform);
+	}
 
 	// --- Main Method ---
 	public static void main(String[] args) {
