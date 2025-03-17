@@ -23,8 +23,8 @@ public class MainClass extends JPanel implements KeyListener {
 	private static Objects[] object3D = new Objects[OBJ_NUM];
 	private static TransformGroup characterTG;
 
-	// Character position used for movement
-	private Vector3f position = new Vector3f();
+	// Set the sphere's initial logical position at ground level.
+	private Vector3f position = new Vector3f(0f, 1.5f, 0f);
 	private final float MOVE_STEP = 0.2f;
 
 	// For controlling camera look (first-person orientation)
@@ -86,8 +86,8 @@ public class MainClass extends JPanel implements KeyListener {
 		Appearance sphereAppearance = new Appearance();
 		sphereAppearance.setMaterial(new Material());
 		// The sphere represents the character.
-		Sphere character = new Sphere(0.2f, sphereAppearance);
-		characterTG.addChild(character);
+//		Sphere character = new Sphere(0.2f, sphereAppearance);
+//		characterTG.addChild(character); //Not rendering sphere.
 
 		// Floor and walls.
 		object3D[0] = new SquareShape("ImageEmrald.jpg", 4f, 0.01f, 4f);             // Floor
@@ -142,7 +142,8 @@ public class MainClass extends JPanel implements KeyListener {
 		viewTG = su.getViewingPlatform().getViewPlatformTransform();
 		characterTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 
-		// Set the initial view transform so the camera is exactly at the sphere's center.
+		// Set the initial view transform so the camera is at the sphere's center.
+		// The sphere remains at ground level, but the view offset (in updateLook) lifts the camera.
 		Transform3D initialView = new Transform3D();
 		initialView.setTranslation(new Vector3f(position.x, position.y, position.z));
 		viewTG.setTransform(initialView);
@@ -208,14 +209,14 @@ public class MainClass extends JPanel implements KeyListener {
 			case KeyEvent.VK_UP:
 				// Forward vector: note the negative Z component.
 				moveX = -(float)(Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				moveY = (float)(Math.sin(pitch)) * MOVE_STEP;
+			//	moveY = (float)(Math.sin(pitch)) * MOVE_STEP;
 				moveZ = -(float)(Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
 				break;
 			case KeyEvent.VK_S:
 			case KeyEvent.VK_DOWN:
 				// Backward: the inverse of forward.
 				moveX = (float)(Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				moveY = -(float)(Math.sin(pitch)) * MOVE_STEP;
+			//	moveY = -(float)(Math.sin(pitch)) * MOVE_STEP;
 				moveZ = (float)(Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
 				break;
 			case KeyEvent.VK_A:
@@ -234,7 +235,7 @@ public class MainClass extends JPanel implements KeyListener {
 
 		// Update the sphere's (character's) position.
 		position.x += moveX;
-		position.y += moveY;
+		//position.y += moveY;
 		position.z += moveZ;
 
 		updatePosition();
@@ -264,11 +265,12 @@ public class MainClass extends JPanel implements KeyListener {
 		rotation.mul(pitchRot); // rotation = R_yaw * R_pitch
 
 		// Build the translation transform.
+		// The camera is placed at sphere's center plus an offset to lift it.
+		// Change the 2.0f value to adjust how high above the sphere the camera sits.
 		Transform3D translation = new Transform3D();
-		translation.setTranslation(new Vector3f(position.x, position.y+1.0f, position.z));
+		translation.setTranslation(new Vector3f(position.x, position.y, position.z));
 
 		// Combine: viewTransform = translation * rotation.
-		// This ensures that the camera is first placed at the sphere's center, then rotated.
 		Transform3D viewTransform = new Transform3D();
 		viewTransform.mul(translation, rotation);
 		viewTG.setTransform(viewTransform);
