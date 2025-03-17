@@ -7,6 +7,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.util.Iterator;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import org.jogamp.java3d.*;
@@ -23,8 +24,12 @@ public class MainClass extends JPanel implements KeyListener {
 	private static Objects[] object3D = new Objects[OBJ_NUM];
 	private static TransformGroup characterTG;
 
-	// Set the sphere's initial logical position at ground level.
+	// The character’s current position (starting at ground level, lifted slightly)
 	private Vector3f position = new Vector3f(0f, 1.5f, 0f);
+	// Last safe (non-colliding) position
+	private Vector3f lastSafePosition = new Vector3f(0f, 1.5f, 0f);
+	// Flag to indicate collision status
+	private boolean colliding = false;
 	private final float MOVE_STEP = 0.2f;
 
 	// For controlling camera look (first-person orientation)
@@ -86,8 +91,9 @@ public class MainClass extends JPanel implements KeyListener {
 		Appearance sphereAppearance = new Appearance();
 		sphereAppearance.setMaterial(new Material());
 		// The sphere represents the character.
-//		Sphere character = new Sphere(0.2f, sphereAppearance);
-//		characterTG.addChild(character); //Not rendering sphere.
+		Sphere character = new Sphere(0.2f, sphereAppearance);
+		characterTG.addChild(character);
+		// (Collision detection behavior will be attached later in the constructor.)
 
 		// Floor and walls.
 		object3D[0] = new SquareShape("ImageEmrald.jpg", 4f, 0.01f, 4f);             // Floor
@@ -143,10 +149,19 @@ public class MainClass extends JPanel implements KeyListener {
 		characterTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
 
 		// Set the initial view transform so the camera is at the sphere's center.
-		// The sphere remains at ground level, but the view offset (in updateLook) lifts the camera.
 		Transform3D initialView = new Transform3D();
 		initialView.setTranslation(new Vector3f(position.x, position.y, position.z));
 		viewTG.setTransform(initialView);
+
+		// Add collision detection behavior to the character.
+		// Retrieve the character sphere from characterTG.
+		if (characterTG.numChildren() > 0) {
+			Sphere characterSphere = (Sphere) characterTG.getChild(0);
+			Shape3D characterShape = (Shape3D) characterSphere.getChild(0);
+			CollisionDetectCharacter collisionBehavior = new CollisionDetectCharacter(characterShape);
+			collisionBehavior.setSchedulingBounds(new BoundingSphere(new Point3d(0, 0, 0), 100));
+			characterTG.addChild(collisionBehavior);
+		}
 
 		// Add a mouse motion listener to update the look direction.
 		canvas.addMouseMotionListener(new MouseMotionAdapter() {
@@ -200,47 +215,51 @@ public class MainClass extends JPanel implements KeyListener {
 	// --- KeyListener Methods for FPP Movement ---
 	@Override
 	public void keyPressed(KeyEvent e) {
+		// If a collision is active, ignore further key input.
+		if (colliding) {
+			System.out.println("Movement ignored while colliding.");
+			return;
+		}
+
+		// Save the current (safe) position.
+		lastSafePosition.set(position);
+
 		float moveX = 0, moveY = 0, moveZ = 0;
 
 		// For a typical Java 3D FPP setup, the default view direction is along -Z.
-		// So we define the forward vector accordingly.
 		switch(e.getKeyCode()){
 			case KeyEvent.VK_W:
 			case KeyEvent.VK_UP:
-				// Forward vector: note the negative Z component.
 				moveX = -(float)(Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
-			//	moveY = (float)(Math.sin(pitch)) * MOVE_STEP;
 				moveZ = -(float)(Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
 				break;
 			case KeyEvent.VK_S:
 			case KeyEvent.VK_DOWN:
-				// Backward: the inverse of forward.
 				moveX = (float)(Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
-			//	moveY = -(float)(Math.sin(pitch)) * MOVE_STEP;
 				moveZ = (float)(Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
 				break;
 			case KeyEvent.VK_A:
 			case KeyEvent.VK_LEFT:
-				// Strafe left (perpendicular to forward).
+				// Use perpendicular left vector: (-cos(yaw), sin(yaw))
 				moveX = -(float)Math.cos(yaw) * MOVE_STEP;
-				moveZ = -(float)Math.sin(yaw) * MOVE_STEP;
+				moveZ =  (float)Math.sin(yaw) * MOVE_STEP;
 				break;
 			case KeyEvent.VK_D:
 			case KeyEvent.VK_RIGHT:
-				// Strafe right.
+				// Use perpendicular right vector: (cos(yaw), -sin(yaw))
 				moveX = (float)Math.cos(yaw) * MOVE_STEP;
-				moveZ = (float)Math.sin(yaw) * MOVE_STEP;
+				moveZ = -(float)Math.sin(yaw) * MOVE_STEP;
 				break;
 		}
 
 		// Update the sphere's (character's) position.
 		position.x += moveX;
-		//position.y += moveY;
 		position.z += moveZ;
 
 		updatePosition();
 		updateLook();
 	}
+
 
 	@Override
 	public void keyTyped(KeyEvent e) { }
@@ -255,25 +274,67 @@ public class MainClass extends JPanel implements KeyListener {
 	}
 
 	// Updates the view transform so the camera stays inside the sphere.
-	// Here we combine the translation (to the sphere’s center) with the rotation (from yaw and pitch).
 	private void updateLook() {
-		// Build the rotation transform.
 		Transform3D rotation = new Transform3D();
 		rotation.rotY(yaw);
 		Transform3D pitchRot = new Transform3D();
 		pitchRot.rotX(pitch);
-		rotation.mul(pitchRot); // rotation = R_yaw * R_pitch
+		rotation.mul(pitchRot);
 
-		// Build the translation transform.
-		// The camera is placed at sphere's center plus an offset to lift it.
-		// Change the 2.0f value to adjust how high above the sphere the camera sits.
 		Transform3D translation = new Transform3D();
 		translation.setTranslation(new Vector3f(position.x, position.y, position.z));
 
-		// Combine: viewTransform = translation * rotation.
 		Transform3D viewTransform = new Transform3D();
 		viewTransform.mul(translation, rotation);
 		viewTG.setTransform(viewTransform);
+	}
+
+	// --- Collision Detection Behavior ---
+	private class CollisionDetectCharacter extends Behavior {
+		private Shape3D shape;
+		private WakeupOnCollisionEntry wEnter;
+		private WakeupOnCollisionExit wExit;
+
+		public CollisionDetectCharacter(Shape3D s) {
+			shape = s;
+		}
+
+		@Override
+		public void initialize() {
+			wEnter = new WakeupOnCollisionEntry(shape, WakeupOnCollisionEntry.USE_GEOMETRY);
+			wExit  = new WakeupOnCollisionExit(shape, WakeupOnCollisionExit.USE_GEOMETRY);
+			wakeupOn(new WakeupOr(new WakeupCriterion[] { wEnter, wExit }));
+		}
+
+		@Override
+		public void processStimulus(Iterator criteria) {
+			boolean collisionEntry = false;
+			boolean collisionExit  = false;
+
+			while (criteria.hasNext()) {
+				WakeupCriterion wc = (WakeupCriterion) criteria.next();
+				if (wc instanceof WakeupOnCollisionEntry)
+					collisionEntry = true;
+				if (wc instanceof WakeupOnCollisionExit)
+					collisionExit = true;
+			}
+
+			if (collisionEntry) {
+				colliding = true;  // lock movement
+				// Revert to last safe position.
+				position.set(lastSafePosition);
+				updatePosition();
+				System.out.println("Collision detected: reverting to safe position: " + lastSafePosition);
+			}
+			if (collisionExit) {
+				colliding = false; // allow movement again
+				// Update lastSafePosition to the current position.
+				lastSafePosition.set(position);
+				System.out.println("Collision resolved: updating safe position to: " + position);
+			}
+
+			wakeupOn(new WakeupOr(new WakeupCriterion[] { wEnter, wExit }));
+		}
 	}
 
 	// --- Main Method ---
