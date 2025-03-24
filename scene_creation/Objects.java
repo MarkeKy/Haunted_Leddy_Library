@@ -1,7 +1,7 @@
 package scene_creation;
 
 import java.io.FileNotFoundException;
-
+import java.util.*;
 import org.jogamp.java3d.*;
 import org.jogamp.java3d.loaders.*;
 import org.jogamp.java3d.loaders.objectfile.ObjectFile;
@@ -23,7 +23,8 @@ public abstract class Objects {
 	protected Vector3f post;                               // use 'post' to specify location
 	protected Shape3D obj_shape;
 	protected static String obj_name; //For FanBlades and Guard. Setting appearance for multiple parts of an object
-	protected String file_name; //Filename for texture string
+	protected String texture_name; //Filename for texture string
+	
 	protected float x,y,z;    //Dimension for square shape
     
 	public abstract TransformGroup position_Object();      // need to be defined in derived classes
@@ -56,6 +57,14 @@ public abstract class Objects {
 		scaler.setTranslation(post);                       // set translations for the 4x4 matrix
 		objTG = new TransformGroup(scaler);                // set the translation BG with the 4x4 matrix
 		objBG = loadShape(obj_name).getSceneGroup();       // load external object to 'objBG'
+		for (int i = 0; i < objBG.numChildren(); i++) {   //Make all the objects pickable
+	        Node child = objBG.getChild(i);
+	        //if (child instanceof Shape3D) {
+	            Shape3D shape = (Shape3D) child;
+	            shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+	            shape.setPickable(true);
+	        //}
+	    }
 		obj_shape = (Shape3D) objBG.getChild(0);           // get and cast the object to 'obj_shape'
 		obj_shape.setName(obj_name);                       // use the name to identify the object 
 	}
@@ -97,7 +106,7 @@ public abstract class Objects {
 		TexCoordGeneration tcg = new TexCoordGeneration(TexCoordGeneration.OBJECT_LINEAR,
 				TexCoordGeneration.TEXTURE_COORDINATE_2);
 		app.setTexCoordGeneration(tcg);
-		app.setTexture(texture_App(file_name)); //add texture
+		app.setTexture(texture_App(texture_name)); //add texture
 		
 		TextureAttributes textureAttrib= new TextureAttributes();
 		textureAttrib.setTextureMode(TextureAttributes.REPLACE);
@@ -134,12 +143,12 @@ public abstract class Objects {
 //Classes for each 3D objects (Floor, Ceiling, etc.)
 
 class WallObject extends Objects {
-	public WallObject(String file_name) {                 //Filename for the object
+	public WallObject(String texture_name) {                 //Filename for the object
 		super();
-		this.file_name = file_name;
-		scale = 0d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0f, 0f, 0);         // location to connect "FanSwitch" with "FanStand"
-		transform_Object("door");                     // set transformation to 'objTG' and load object file
+		this.texture_name = texture_name;
+		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0.05f, 1.5f, -4f);                // Define the location of the wall object
+		transform_Object("DoorOpeningWall");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
@@ -154,9 +163,9 @@ class WallObject extends Objects {
 }
 
 class ShelfObject extends Objects {
-	public ShelfObject(String file_name) {                 //Filename for the object
+	public ShelfObject(String texture_name) {                 //Filename for the object
 		super();
-		this.file_name = file_name;
+		this.texture_name = texture_name;
 		scale = 2d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0f, 0f, -2.5f);                // location to connect "FanSwitch" with "FanStand"
 		transform_Object("EmptySelf");                     // set transformation to 'objTG' and load object file
@@ -174,19 +183,40 @@ class ShelfObject extends Objects {
 }
 
 class GroupbooksObject extends Objects {
-	public GroupbooksObject(String file_name) {                 //Filename for the object
+	public GroupbooksObject(String texture_name, String object_name) {                 //Filename for the texture and for the object, since there are two group books
 		super();
-		this.file_name = file_name;
-		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0.02f, -0.77f, -0.8f);         // location to connect "FanSwitch" with "FanStand"
-		transform_Object("Singlebook1");                     // set transformation to 'objTG' and load object file
+		this.texture_name = texture_name;
+		scale = 0.18d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0f, 0f, 0f);                   // location to connect "FanSwitch" with "FanStand"
+		transform_Object(object_name);                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
 	public TransformGroup position_Object() {
-		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
-		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+		//Orientate the group of books properly
+	    // Create a Transform3D for the Y rotation (90° about Y)
+	    Transform3D yRotation = new Transform3D();
+	    yRotation.rotY(Math.PI / 2);
+
+	    // Create a Transform3D for the Z rotation (90° about X)
+	    Transform3D zRotation = new Transform3D();
+	    zRotation.rotZ(Math.PI / 2);
+
+	    zRotation.mul(yRotation);
+	    
+	    // Create a new TransformGroup with the combined rotation
+	    objRG = new TransformGroup(zRotation);
+	    
+	    // Add your loaded object to the rotation transform group
+	    objRG.addChild(objBG);
+	    
+	    // Attach the rotation group to the main transform group (with scaling/translation)
+	    objTG.addChild(objRG);
+	    
+	    return objTG;
 	}
+
+
 
 	public void add_Child(TransformGroup nextTG) {
 		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
@@ -194,18 +224,40 @@ class GroupbooksObject extends Objects {
 }
 
 class SinglebookObject extends Objects {
-	public SinglebookObject(String file_name) {                 //Filename for the object
+	public SinglebookObject(String texture_name) {                 //Filename for the object
 		super();
-		this.file_name = file_name;
-		scale = 1d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		this.texture_name = texture_name;
+		scale = 0.2d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0f, 1f, 0f);         // location to connect "FanSwitch" with "FanStand"
 		transform_Object("Singlebook1");                     // set transformation to 'objTG' and load object file
 		obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
 	public TransformGroup position_Object() {
-		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
-		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+		//Orientate the group of books properly
+	    // Create a Transform3D for the Y rotation (90° about Y)
+	    Transform3D yRotation = new Transform3D();
+	    yRotation.rotY(Math.PI/2);
+
+	    // Create a Transform3D for the Z rotation (90° about X)
+	    Transform3D zRotation = new Transform3D();
+	    zRotation.rotZ(Math.PI/2);
+	    
+	    Transform3D xRotation = new Transform3D();
+	    xRotation.rotX(Math.PI/2);
+
+	    zRotation.mul(yRotation);
+	    zRotation.mul(xRotation);
+	     //Create a new TransformGroup with the combined rotation
+	    objRG = new TransformGroup(zRotation);
+	    
+	    // Add your loaded object to the rotation transform group
+	    objRG.addChild(objBG);
+	    
+	    // Attach the rotation group to the main transform group (with scaling/translation)
+	    objTG.addChild(objRG);
+	    
+	    return objTG;
 	}
 
 	public void add_Child(TransformGroup nextTG) {
@@ -214,9 +266,9 @@ class SinglebookObject extends Objects {
 }
 
 class SquareShape extends Objects {
-	public SquareShape(String file_name, float x, float y, float z) { //Define the texture file and the dimensions for the box
+	public SquareShape(String texture_name, float x, float y, float z) { //Define the texture file and the dimensions for the box
 		this.x = x; this.y = y; this.z = z;                           //Initialize the values
-		this.file_name = file_name;
+		this.texture_name = texture_name;
 		Transform3D translator = new Transform3D();
 		translator.setTranslation(new Vector3d(0.0, -0.54, 0));
 		objTG = new TransformGroup(translator);            // down half of the tower and base's heights
@@ -232,7 +284,7 @@ class SquareShape extends Objects {
 	
 	protected Node create_Object() {
 		app = CommonsSK.set_Appearance(CommonsSK.White);   // set the appearance for the base
-		app.setTexture(Objects.texture_App(file_name));
+		app.setTexture(Objects.texture_App(texture_name));
 		PolygonAttributes pa = new PolygonAttributes();
 		pa.setCullFace(PolygonAttributes.CULL_NONE);       // show both sides
 		app.setPolygonAttributes(pa);
