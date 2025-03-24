@@ -108,24 +108,7 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Act
 		updateLook();
 	}
     
-	//Birds EYE view
-//	    public MainClass(BranchGroup sceneBG) {
-//	        GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
-//	        Canvas3D canvas = new Canvas3D(config);
-//	        canvas.setFocusable(true);             // ensure canvas receives key events
-//	        canvas.addKeyListener(this);           // add listener to this program
-//	        add(canvas);
-//	        
-//	        SimpleUniverse su = new SimpleUniverse(canvas);
-//	        CommonsSK.define_Viewer(su, new Point3d(0f, 13f, 0f)); //Change the eye to new Point3d(0f, 6f, 0f) to get birds eye view
-//	        sceneBG.compile();
-//	        su.addBranchGraph(sceneBG);
-//	        setLayout(new BorderLayout());
-//	        add("Center", canvas);
-//	        frame.setSize(800, 800);
-//	        frame.setVisible(true);
-//	    }
-	 
+
 	//First Person Perspective
 	public MainClass(BranchGroup sceneBG) {
 		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();

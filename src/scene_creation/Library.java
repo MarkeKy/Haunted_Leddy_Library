@@ -1,5 +1,9 @@
 package scene_creation;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.jogamp.java3d.Appearance;
 import org.jogamp.java3d.BoundingSphere;
 import org.jogamp.java3d.Material;
@@ -12,7 +16,7 @@ import org.jogamp.vecmath.Vector3f;
 
 public class Library {
 	
-	private static final int OBJ_NUM = 6; //+4 objects (Shaft, Motor, Blade, Guard)
+	private static final int OBJ_NUM = 8; //+4 objects (Shaft, Motor, Blade, Guard)
 	private static Objects[] object3D = new Objects[OBJ_NUM];  //Number of objects
 	// Made these static to be referenced throughout the program.
 	protected static TransformGroup characterTG;
@@ -40,11 +44,18 @@ public class Library {
         // Calculate starting z position so that the books are centered
         float totalSpacing = (numBooks - 1) * spacing;
         float startZ = -totalSpacing / 2;
+     // Define the list of textures
+        List<String> textures = new ArrayList<>();
+        textures.add("RedImage.png");
+        textures.add("YellowImage.png");
+        textures.add("BlueImage.png");
+        
+        // Shuffle the list to assign different colors randomly
+        Collections.shuffle(textures);
         
         for (int i = 0; i < numBooks; i++) {
-            // Create a new GroupbooksObject using the same parameters =
-            String texture = (i % 2 == 0) ? "ImageEmrald.jpg" : "WoodTexture.png"; //Set to different colors
-
+        	// Assign texture from the shuffled list
+            String texture = textures.get(i);
             GroupbooksObject books = new GroupbooksObject(texture, "Groupbooks1");
             TransformGroup bookTG = new TransformGroup();
             
@@ -175,16 +186,39 @@ public class Library {
         cds.setSchedulingBounds(new BoundingSphere(new Point3d(0,0,0), 100));
         characterTG.addChild(cds);
         
-	    object3D[0] = new SquareShape("ImageEmrald.jpg",4f,0.01f,4f);                   // create "FloorObject"
+	    object3D[0] = new SquareShape("CarpetTexture.jpeg",4f,0.01f,4f);                   // create "FloorObject"
 	    object3D[1] = new SquareShape("MarbleTexture.jpg",4f,4f,0.05f);                   // create Front and Back wall dimensions
 	    object3D[2] = new SquareShape("MarbleTexture.jpg",4f,4f,0.05f);                   // create Front and Back wall dimensions
-	    object3D[3] = new WallObject("ImageEmrald.jpg");                              // create dimensions for open wall
+	    object3D[3] = new WallObject("MarbleTexture.jpg");                              // create dimensions for open wall
 	    object3D[5] = new SquareShape("MarbleTexture.jpg",4f,0.01f,4f);             //Create ceiling, same dimensions as floor object
-	    
+	    object3D[6] = new DoorObject("DoorTexture.jfif");                                //Create the door object
+	    object3D[7] = new DoorObject("DoorTexture.jfif");                                //Create the door object
+	 
+
+	    // Define the transformations for object3D[7]
+	    Transform3D scaleTransform = new Transform3D();
+	    scaleTransform.setScale(object3D[7].scale); // Use the existing scale (0.4d)
+
+	    Transform3D rotation = new Transform3D();
+	    rotation.rotY(Math.PI); // 180-degree rotation around Y-axis
+
+	    Transform3D translation = new Transform3D();
+	    translation.setTranslation(new Vector3f(0.185f, -0.03f, 0f)); // Position next to object3D[6]
+
+	    // Combine transformations: scale, then rotate, then translate
+	    Transform3D combined = new Transform3D();
+	    combined.mul(translation, rotation); // Apply rotation, then translation
+	    combined.mul(scaleTransform);        // Apply scale first
+
+	    // Apply the combined transform to object3D[7]'s TransformGroup
+	    object3D[7].objTG.setTransform(combined);
+
+	    // Add object3D[7] to the left wall, alongside object3D[6]
+	    object3D[3].add_Child(object3D[7].position_Object());
 	    Transform3D yAxis = new Transform3D();
 	    yAxis.rotY(Math.PI/2); //Rotate along the y axis
 	    yAxis.setTranslation(new Vector3f(0f, 0.15f, 0));
-	    object3D[4] = new SquareShape("ImageEmrald.jpg",0.05f, 4f, 4f);                   // create Left and right wall dimensions
+	    object3D[4] = new SquareShape("MarbleTexture.jpg",0.05f, 4f, 4f);                   // create Left and right wall dimensions
 	    
 	    // Front Wall translation group
 	    TransformGroup frontWallTG = define_wall(object3D[1].position_Object(), new Vector3f(0f, 4f, 4f));
@@ -201,8 +235,8 @@ public class Library {
 	    TransformGroup ceilingTG = define_wall(object3D[5].position_Object(), new Vector3f(0f, 4.15f, 0));       //Position of the ceiling
         
 //	    //Create shelf objects
-        TransformGroup shelvesTG1 = createShelves(5, 1.5f, "FloorTexture.jpg");
-        TransformGroup shelvesTG2 = createShelves(5, 1.5f, "FloorTexture.jpg");
+        TransformGroup shelvesTG1 = createShelves(5, 1.5f, "ImageFloor2.jpg");
+        TransformGroup shelvesTG2 = createShelves(5, 1.5f, "ImageFloor2.jpg");
 
         // Create a Transform3D for the z offset:
         Transform3D Offset = new Transform3D();
@@ -210,8 +244,10 @@ public class Library {
 
         // Apply the transformation to shelvesTG2:
         shelvesTG2.setTransform(Offset);
-	    
+//	    
         //Creating the scene graph
+        object3D[3].add_Child(object3D[6].position_Object());          // add the door
+
         object3D[0].add_Child(shelvesTG1);                             // add the shelves
         object3D[0].add_Child(shelvesTG2);
         libraryTG.addChild(object3D[0].position_Object());             // add floorTG to library TG
@@ -221,7 +257,7 @@ public class Library {
 	    libraryTG.addChild(rightWallTG);                               // add rightWallTG to library TG
 	    libraryTG.addChild(ceilingTG);                                 // add ceilingTG to library TG
 	    libraryTG.addChild(characterTG);
-	    
+	    //libraryTG.addChild(object3D[6].position_Object());
 	    return libraryTG;
 	}
 }
