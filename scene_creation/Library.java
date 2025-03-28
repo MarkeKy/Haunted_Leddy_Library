@@ -113,7 +113,7 @@ public class Library {
         Text2D shelfLabel = new Text2D("Shelf " + shelfNumber, new Color3f(1f, 1f, 1f), "Serif", 12, Font.PLAIN);
         TransformGroup labelTG = new TransformGroup();
         Transform3D labelTrans = new Transform3D();
-        labelTrans.setTranslation(new Vector3f(0f, 1.0f, 0f)); // Above shelf
+        labelTrans.setTranslation(new Vector3f(1.0f, 1.0f, 1f)); // Above shelf
         labelTG.setTransform(labelTrans);
         labelTG.addChild(shelfLabel);
         ShelfTG.addChild(labelTG);

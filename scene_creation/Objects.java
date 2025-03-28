@@ -152,7 +152,7 @@ class WallObject extends Objects {
 	}
 
 	public TransformGroup position_Object() {
-		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
+		objTG.addChild(objBG);
 		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
 	}
 
@@ -170,7 +170,7 @@ class ShelfObject extends Objects {
 		super();
 		this.texture_name = texture_name;
 		scale = 2d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0f, 0f, -2.5f);                // location to connect "FanSwitch" with "FanStand"
+		post = new Vector3f(-0.5f, 0f, -2.5f);                // location to connect "FanSwitch" with "FanStand"
 		// Load geometry only once
 		if (shelfGeometry == null) {
 			Scene s = loadShape("EmptySelf");
