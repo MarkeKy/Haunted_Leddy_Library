@@ -16,13 +16,13 @@ import org.jogamp.vecmath.Vector3f;
 
 public class Library {
 	
-	private static final int OBJ_NUM = 8; //+4 objects (Shaft, Motor, Blade, Guard)
+	private static final int OBJ_NUM = 20; //objects 
 	private static Objects[] object3D = new Objects[OBJ_NUM];  //Number of objects
 	// Made these static to be referenced throughout the program.
 	protected static TransformGroup characterTG;
 	private static TransformGroup Shifted;
  	private static TransformGroup Shifted2;
- 	// ADDED: Using static fields for position and safe position so other classes can access them.
+ 	// Using static fields for position and safe position so other classes can access them.
  	protected static Vector3f position = new Vector3f();         //2Update position of the character
     protected static Vector3f lastSafePosition = new Vector3f();   // Last non-colliding position
 	
@@ -85,7 +85,7 @@ public class Library {
         ShelfObject shelf = new ShelfObject(textureFile);  // Define shelf object
         TransformGroup ShelfTG = shelf.position_Object();
         
-        
+        //Setting all the transform groups for the books
         TransformGroup booksRowTG1 = duplicateBooksZAxis(3, 0.35f);
         TransformGroup booksRowTG2 = duplicateBooksZAxis(3, 0.35f);
         TransformGroup booksRowTG3 = duplicateBooksZAxis(3, 0.35f);
@@ -142,15 +142,15 @@ public class Library {
     private static TransformGroup createShelves(int numShelves, float spacing, String textureFile) {
         TransformGroup shelvesTG = new TransformGroup();
         
-        // Calculate initial offset so that shelves are centered
-        float totalWidth = (numShelves - 1) * spacing;
-        float startX = -totalWidth / 2;
+        // Calculate starting z position so that the shelves are centered along Z
+        float totalDepth = (numShelves - 1) * spacing;
+        float startZ = -totalDepth / 2;
         
         for (int i = 0; i < numShelves; i++) {
-            // Calculate the x-position for the current shelf
-            float xPos = startX + i * spacing;
-            // Adjust y and z positions as needed (for example, y = shelf height above the floor)
-            Vector3f shelfPos = new Vector3f(xPos, 2f, 0f);
+            // Calculate the z-position for the current shelf
+            float zPos = startZ + i * spacing;
+            // Set y to 2f as before, x to 0f to align shelves along Z at X=0
+            Vector3f shelfPos = new Vector3f(0f, 2f, zPos);
             
             // Create the shelf transform group and add it to the parent group
             TransformGroup shelfTG = createShelf(textureFile, shelfPos);
@@ -182,9 +182,9 @@ public class Library {
         // Attach the collision behavior to the character.
         // (Assuming the sphere's geometry is its first child.)
         Shape3D characterShape = (Shape3D) character.getChild(0);
-        CollisionDetectCharacter cds = new CollisionDetectCharacter(characterShape);  //Collision Detection
-        cds.setSchedulingBounds(new BoundingSphere(new Point3d(0,0,0), 100));
-        characterTG.addChild(cds);
+//        CollisionDetectCharacter cds = new CollisionDetectCharacter(characterShape);  //Collision Detection
+//        cds.setSchedulingBounds(new BoundingSphere(new Point3d(0,0,0), 100));
+//        characterTG.addChild(cds);
         
 	    object3D[0] = new SquareShape("CarpetTexture.jpeg",4f,0.01f,4f);                   // create "FloorObject"
 	    object3D[1] = new SquareShape("MarbleTexture.jpg",4f,4f,0.05f);                   // create Front and Back wall dimensions
@@ -193,7 +193,7 @@ public class Library {
 	    object3D[5] = new SquareShape("MarbleTexture.jpg",4f,0.01f,4f);             //Create ceiling, same dimensions as floor object
 	    object3D[6] = new DoorObject("DoorTexture.jfif");                                //Create the door object
 	    object3D[7] = new DoorObject("DoorTexture.jfif");                                //Create the door object
-	 
+	    object3D[8] = new SquareShape("ImageFloor3.jpg",4f,0.01f,4f);                   // create "FloorObject"
 
 	    // Define the transformations for object3D[7]
 	    Transform3D scaleTransform = new Transform3D();
@@ -228,36 +228,41 @@ public class Library {
 	    
 	    // Left Wall translation group
 	    TransformGroup leftWallTG = define_wall(object3D[3].position_Object(), new Vector3f(-4f, 4f, 4));
-	    leftWallTG.setTransform(yAxis);
+	    leftWallTG.setTransform(yAxis);  //Rotate along the y axis
 	    // Right Wall translation group
 	    TransformGroup rightWallTG = define_wall(object3D[4].position_Object(), new Vector3f(4f, 4f, 0));
 	    
 	    TransformGroup ceilingTG = define_wall(object3D[5].position_Object(), new Vector3f(0f, 4.15f, 0));       //Position of the ceiling
         
-//	    //Create shelf objects
+	    TransformGroup WoodFloorTG = define_wall(object3D[8].position_Object(), new Vector3f(0f, 0f, -4));       //Create the woodfloorTG
+//	    Transform3D zAxis = new Transform3D();
+//	    yAxis.rotZ(Math.PI/2);
+//        WoodFloorTG.setTransform(zAxis);         //Rotate about the X axis
+	    
+	    
+	    //Create shelf objects
         TransformGroup shelvesTG1 = createShelves(5, 1.5f, "ImageFloor2.jpg");
         TransformGroup shelvesTG2 = createShelves(5, 1.5f, "ImageFloor2.jpg");
 
-        // Create a Transform3D for the z offset:
-        Transform3D Offset = new Transform3D();
-        Offset.setTranslation(new Vector3f(0.0f, 0.0f, 5.0f));  // Change '2.0f' to your desired z offset
-
-        // Apply the transformation to shelvesTG2:
-        shelvesTG2.setTransform(Offset);
+     // Create a transform group to offset shelvesTG2 along X
+        Transform3D offset = new Transform3D();
+        offset.setTranslation(new Vector3f(2.5f, 0.0f, 0.0f)); // Offset along X by 2.5 units
+        TransformGroup offsetTG = new TransformGroup(offset);
+        offsetTG.addChild(shelvesTG2);
 //	    
         //Creating the scene graph
         object3D[3].add_Child(object3D[6].position_Object());          // add the door
 
         object3D[0].add_Child(shelvesTG1);                             // add the shelves
-        object3D[0].add_Child(shelvesTG2);
+        object3D[0].add_Child(offsetTG);
         libraryTG.addChild(object3D[0].position_Object());             // add floorTG to library TG
-	    libraryTG.addChild(frontWallTG);                               // add frontWallTG to library TG
-	    libraryTG.addChild(backWallTG);                                // add backWallTG to library TG
+	    //libraryTG.addChild(frontWallTG);                               // add frontWallTG to library TG
+	    //libraryTG.addChild(backWallTG);                                // add backWallTG to library TG
 	    libraryTG.addChild(leftWallTG);                                // add leftWallTG to library TG
 	    libraryTG.addChild(rightWallTG);                               // add rightWallTG to library TG
 	    libraryTG.addChild(ceilingTG);                                 // add ceilingTG to library TG
 	    libraryTG.addChild(characterTG);
-	    //libraryTG.addChild(object3D[6].position_Object());
+	    libraryTG.addChild(WoodFloorTG);
 	    return libraryTG;
 	}
 }

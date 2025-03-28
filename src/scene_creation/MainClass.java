@@ -56,7 +56,8 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Act
 
 		sceneBG.addChild(sceneTG);                         // keep the following stationary
 		sceneBG.addChild(CommonsSK.add_Lights(CommonsSK.White, 1));
-
+		// Add reference axes
+	    sceneBG.addChild(createAxes());
 		return sceneBG;
 	}
 
@@ -64,10 +65,10 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Act
 	@Override
 	public void keyPressed(KeyEvent e) {
 		// If a collision is active, ignore further key input.
-		if (CollisionDetectCharacter.colliding) { // ADDED: Using static colliding flag from CollisionDetectCharacter
-			System.out.println("Movement ignored while colliding.");
-			return;
-		}
+//		if (CollisionDetectCharacter.colliding) { // ADDED: Using static colliding flag from CollisionDetectCharacter
+//			System.out.println("Movement ignored while colliding.");
+//			return;
+//		}
 
 		// Save the current (safe) position.
 		Library.lastSafePosition.set(Library.position); // ADDED: Use Library static fields
@@ -101,13 +102,53 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Act
 		}
 
 		// Update the sphere's (character's) position.
-		Library.position.x += moveX; // ADDED: Use Library static fields
+		Library.position.x += moveX; // Use Library static fields
 		Library.position.z += moveZ;
 
-		Movement.updatePosition(); // ADDED: Call static update method from Movement
+		Movement.updatePosition(); // Call static update method from Movement
 		updateLook();
 	}
     
+	private static BranchGroup createAxes() {
+	    BranchGroup axisGroup = new BranchGroup();
+	    
+	    LineArray axisLines = new LineArray(6, LineArray.COORDINATES | LineArray.COLOR_3);
+	    
+	    // X-axis: Negative (Red), Positive (Orange)
+	    axisLines.setCoordinate(0, new Point3f(-100.0f, 0.0f, 0.0f)); // Negative X
+	    axisLines.setCoordinate(1, new Point3f(100.0f, 0.0f, 0.0f));  // Positive X
+	    axisLines.setColor(0, new Color3f(1.0f, 0.0f, 0.0f));  // Red
+	    axisLines.setColor(1, new Color3f(1.0f, 0.5f, 0.0f));  // Orange
+	    
+	    // Y-axis: Green (Unchanged)
+	    axisLines.setCoordinate(2, new Point3f(0.0f, -100.0f, 0.0f));
+	    axisLines.setCoordinate(3, new Point3f(0.0f, 100.0f, 0.0f));
+	    axisLines.setColor(2, new Color3f(0.0f, 1.0f, 0.0f)); // Green
+	    axisLines.setColor(3, new Color3f(0.0f, 1.0f, 0.0f)); // Green
+	    
+	    // Z-axis: Negative (Blue), Positive (Purple)
+	    axisLines.setCoordinate(4, new Point3f(0.0f, 0.0f, -100.0f)); // Negative Z
+	    axisLines.setCoordinate(5, new Point3f(0.0f, 0.0f, 100.0f));  // Positive Z
+	    axisLines.setColor(4, new Color3f(0.0f, 0.0f, 1.0f));  // Blue
+	    axisLines.setColor(5, new Color3f(0.5f, 0.0f, 0.5f));  // Purple
+	    
+	    // Create a Shape3D object for the axes
+	    Shape3D axisShape = new Shape3D(axisLines);
+	    
+	    // Explicitly set an appearance to ensure per-vertex colors are used
+	    Appearance axisAppearance = new Appearance();
+	    ColoringAttributes ca = new ColoringAttributes();
+	    ca.setShadeModel(ColoringAttributes.NICEST);  // Best color accuracy
+	    axisAppearance.setColoringAttributes(ca);
+	    
+	    axisShape.setAppearance(axisAppearance);
+	    axisGroup.addChild(axisShape);
+	    
+	    return axisGroup;
+	}
+
+
+
 
 	//First Person Perspective
 	public MainClass(BranchGroup sceneBG) {
@@ -133,15 +174,15 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Act
 
 		// Add collision detection behavior to the character.
 		// Retrieve the character sphere from characterTG.
-		if (Library.characterTG.numChildren() > 0) {
-			Sphere characterSphere = (Sphere) Library.characterTG.getChild(0);
-			Shape3D characterShape = (Shape3D) characterSphere.getChild(0);
-			CollisionDetectCharacter collisionBehavior = new CollisionDetectCharacter(characterShape);
-			collisionBehavior.setSchedulingBounds(new BoundingSphere(new Point3d(0, 0, 0), 100));
-			Library.characterTG.addChild(collisionBehavior);
-		}
+//		if (Library.characterTG.numChildren() > 0) {
+//			Sphere characterSphere = (Sphere) Library.characterTG.getChild(0);
+//			Shape3D characterShape = (Shape3D) characterSphere.getChild(0);
+//			CollisionDetectCharacter collisionBehavior = new CollisionDetectCharacter(characterShape);
+//			collisionBehavior.setSchedulingBounds(new BoundingSphere(new Point3d(0, 0, 0), 100));
+//			Library.characterTG.addChild(collisionBehavior);
+//		}
 
-		// ADDED: Initialize book game instance.
+		// Initialize book game instance.
 		bookgame = new BookGame();
 
 		// Add a mouse motion listener to update the look direction.
