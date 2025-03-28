@@ -207,7 +207,28 @@ class DoorObject extends Objects {
 		scale = 0.4d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(-0.17f, -0.03f, 0f);                // location to connect "FanSwitch" with "FanStand"
 		transform_Object("doorleft");                     // set transformation to 'objTG' and load object file
-		obj_Appearance();                                  // set appearance after converting object node to Shape3D
+		//	obj_Appearance();                                  // set appearance after converting object node to Shape3D
+	}
+
+	public TransformGroup position_Object() {
+		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
+
+		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
+	}
+}
+
+class HandleObject extends Objects {
+	public HandleObject(String texture_name) {                 //Filename for the object
+		super();
+		this.texture_name = texture_name;
+		scale = 0.4d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0f, 0f, 0f);                   // location to connect "FanSwitch" with "FanStand"
+		transform_Object("Doorhandel");                    // set transformation to 'objTG' and load object file
+		//	obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
 	public TransformGroup position_Object() {
