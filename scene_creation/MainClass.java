@@ -26,8 +26,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	private float pitch = 0.0f;
 	private int lastMouseX = -1, lastMouseY = -1;
 	private boolean firstMouse = true;
-	private int pointerX = 0, pointerY = 0;
-	private float pointerSensitivity = 1.0f;
 	private float rotationSensitivity = 0.005f;
 	private TransformGroup viewTG;
 	private CustomCanvas3D canvas;
@@ -41,26 +39,14 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	private float defaultHeight;        // Store default y position
 
 	private static class CustomCanvas3D extends Canvas3D {
-		private int pointerX, pointerY;
-
 		public CustomCanvas3D(GraphicsConfiguration config) {
 			super(config);
 			setDoubleBufferEnable(true);
 		}
 
-		public void setPointerPosition(int x, int y) {
-			this.pointerX = x;
-			this.pointerY = y;
-			repaint();
-		}
-
 		@Override
 		public void paint(Graphics g) {
 			super.paint(g);
-			Graphics2D g2d = (Graphics2D) g;
-			g2d.setColor(Color.RED);
-			int size = 10;
-			g2d.fillOval(pointerX - size / 2, pointerY - size / 2, size, size);
 		}
 	}
 
@@ -109,10 +95,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		Transform3D initialView = new Transform3D();
 		initialView.setTranslation(new Vector3f(0f, 3f, 20f));
 		viewTG.setTransform(initialView);
-
-		pointerX = 400;
-		pointerY = 400;
-		canvas.setPointerPosition(pointerX, pointerY);
 
 		defaultHeight = Library.position.y; // Store initial height (e.g., 2.0f)
 
@@ -164,9 +146,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		if (firstMouse) {
 			lastMouseX = x;
 			lastMouseY = y;
-			pointerX = x;
-			pointerY = y;
-			canvas.setPointerPosition(pointerX, pointerY);
 			firstMouse = false;
 			return;
 		}
@@ -174,12 +153,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		int deltaY = y - lastMouseY;
 		lastMouseX = x;
 		lastMouseY = y;
-
-		pointerX += (int)(deltaX * pointerSensitivity);
-		pointerY += (int)(deltaY * pointerSensitivity);
-		pointerX = Math.max(0, Math.min(pointerX, canvas.getWidth()));
-		pointerY = Math.max(0, Math.min(pointerY, canvas.getHeight()));
-		canvas.setPointerPosition(pointerX, pointerY);
 
 		if (!e.isShiftDown()) {
 			yaw += deltaX * rotationSensitivity;
@@ -211,7 +184,7 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 
 		Point3d point3d = new Point3d();
 		Point3d center = new Point3d();
-		canvas.getPixelLocationInImagePlate(pointerX, pointerY, point3d);
+		canvas.getPixelLocationInImagePlate(e.getX(), e.getY(), point3d); // Use mouse position directly
 		canvas.getCenterEyeInImagePlate(center);
 		Transform3D transform3D = new Transform3D();
 		canvas.getImagePlateToVworld(transform3D);
@@ -265,7 +238,7 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 			}
 			System.out.println("Clicked object is not a book or lacks 'book' userData");
 		} else {
-			System.out.println("Nothing picked at (" + pointerX + ", " + pointerY + ")");
+			System.out.println("Nothing picked at (" + e.getX() + ", " + e.getY() + ")");
 		}
 	}
 
@@ -313,7 +286,7 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 			case KeyEvent.VK_D:
 			case KeyEvent.VK_RIGHT:
 				moveX = (float)Math.cos(yaw) * MOVE_STEP;
-				moveZ = (float)Math.sin(yaw) * MOVE_STEP;
+				moveZ = -(float)Math.sin(yaw) * MOVE_STEP;
 				updatePosition = true;
 				break;
 			case KeyEvent.VK_SPACE: // Jump
