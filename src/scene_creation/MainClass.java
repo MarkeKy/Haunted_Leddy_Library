@@ -52,30 +52,49 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	private static BranchGroup createAxes() {
 	    BranchGroup axisGroup = new BranchGroup();
 	    
-	    LineArray axisLines = new LineArray(6, LineArray.COORDINATES | LineArray.COLOR_3);
+	    // Create a LineArray with 12 vertices for 6 lines (2 per axis)
+	    LineArray axisLines = new LineArray(12, LineArray.COORDINATES | LineArray.COLOR_3);
 	    
-	    // X-axis: Negative (Red), Positive (Orange)
-	    axisLines.setCoordinate(0, new Point3f(-100.0f, 0.0f, 0.0f)); // Negative X
-	    axisLines.setCoordinate(1, new Point3f(100.0f, 0.0f, 0.0f));  // Positive X
-	    axisLines.setColor(0, new Color3f(1.0f, 0.0f, 0.0f));  // Red
-	    axisLines.setColor(1, new Color3f(1.0f, 0.5f, 0.0f));  // Orange
+	    // X-axis: Negative part (Yellow)
+	    axisLines.setCoordinate(0, new Point3f(-100.0f, 0.0f, 0.0f)); // Start of negative X
+	    axisLines.setCoordinate(1, new Point3f(0.0f, 0.0f, 0.0f));    // End at origin
+	    axisLines.setColor(0, new Color3f(1.0f, 0.0f, 0.0f));         // Yellow
+	    axisLines.setColor(1, new Color3f(1.0f, 0.0f, 0.0f));         // Yellow
 	    
-	    // Y-axis: Green (Unchanged)
-	    axisLines.setCoordinate(2, new Point3f(0.0f, -100.0f, 0.0f));
-	    axisLines.setCoordinate(3, new Point3f(0.0f, 100.0f, 0.0f));
-	    axisLines.setColor(2, new Color3f(0.0f, 1.0f, 0.0f)); // Green
-	    axisLines.setColor(3, new Color3f(0.0f, 1.0f, 0.0f)); // Green
+	    // X-axis: Positive part (Blue)
+	    axisLines.setCoordinate(2, new Point3f(0.0f, 0.0f, 0.0f));    // Start at origin
+	    axisLines.setCoordinate(3, new Point3f(100.0f, 0.0f, 0.0f));  // End of positive X
+	    axisLines.setColor(2, new Color3f(1.0f, 0.5f, 0.0f));         // Blue
+	    axisLines.setColor(3, new Color3f(1.0f, 0.5f, 0.0f));         // Blue
 	    
-	    // Z-axis: Negative (Blue), Positive (Purple)
-	    axisLines.setCoordinate(4, new Point3f(0.0f, 0.0f, -100.0f)); // Negative Z
-	    axisLines.setCoordinate(5, new Point3f(0.0f, 0.0f, 100.0f));  // Positive Z
-	    axisLines.setColor(4, new Color3f(0.0f, 0.0f, 1.0f));  // Blue
-	    axisLines.setColor(5, new Color3f(0.5f, 0.0f, 0.5f));  // Purple
+	    // Y-axis: Negative part (Green)
+	    axisLines.setCoordinate(4, new Point3f(0.0f, -100.0f, 0.0f)); // Start of negative Y
+	    axisLines.setCoordinate(5, new Point3f(0.0f, 0.0f, 0.0f));    // End at origin
+	    axisLines.setColor(4, new Color3f(0.0f, 1.0f, 0.0f));         // Green
+	    axisLines.setColor(5, new Color3f(0.0f, 1.0f, 0.0f));         // Green
+	    
+	    // Y-axis: Positive part (Green)
+	    axisLines.setCoordinate(6, new Point3f(0.0f, 0.0f, 0.0f));    // Start at origin
+	    axisLines.setCoordinate(7, new Point3f(0.0f, 100.0f, 0.0f));  // End of positive Y
+	    axisLines.setColor(6, new Color3f(0.0f, 1.0f, 0.0f));         // Green
+	    axisLines.setColor(7, new Color3f(0.0f, 1.0f, 0.0f));         // Green
+	    
+	    // Z-axis: Negative part (Red)
+	    axisLines.setCoordinate(8, new Point3f(0.0f, 0.0f, -100.0f)); // Start of negative Z
+	    axisLines.setCoordinate(9, new Point3f(0.0f, 0.0f, 0.0f));    // End at origin
+	    axisLines.setColor(8, new Color3f(0.0f, 0.0f, 1.0f));         // Red
+	    axisLines.setColor(9, new Color3f(0.0f, 0.0f, 1.0f));         // Red
+	    
+	    // Z-axis: Positive part (Orange)
+	    axisLines.setCoordinate(10, new Point3f(0.0f, 0.0f, 0.0f));   // Start at origin
+	    axisLines.setCoordinate(11, new Point3f(0.0f, 0.0f, 100.0f)); // End of positive Z
+	    axisLines.setColor(10, CommonsSK.Yellow);        // Orange
+	    axisLines.setColor(11, CommonsSK.Yellow);        // Orange
 	    
 	    // Create a Shape3D object for the axes
 	    Shape3D axisShape = new Shape3D(axisLines);
 	    
-	    // Explicitly set an appearance to ensure per-vertex colors are used
+	    // Set appearance to ensure per-vertex colors are used
 	    Appearance axisAppearance = new Appearance();
 	    ColoringAttributes ca = new ColoringAttributes();
 	    ca.setShadeModel(ColoringAttributes.NICEST);  // Best color accuracy
