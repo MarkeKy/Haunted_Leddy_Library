@@ -2,14 +2,9 @@ package scene_creation;
 
 import java.awt.*;
 import java.awt.event.*;
-import javax.swing.*;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.LineUnavailableException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.*;
 
 import org.jogamp.java3d.*;
 import org.jogamp.java3d.utils.geometry.Sphere;
@@ -21,14 +16,8 @@ import org.jogamp.vecmath.*;
 public class MainClass extends JPanel implements KeyListener, MouseListener, MouseMotionListener {
 	private static final long serialVersionUID = 1L;
 	private static JFrame frame;
-	private final float MOVE_STEP = 0.15f;
-	private final float JUMP_HEIGHT = 1.0f;
-	private final float CROUCH_HEIGHT = 1.0f;
-	private float yaw = 0.0f;
-	private float pitch = 0.0f;
 	private int lastMouseX = -1, lastMouseY = -1;
 	private boolean firstMouse = true;
-	private float rotationSensitivity = 0.005f;
 	private TransformGroup viewTG;
 	private CustomCanvas3D canvas;
 	private BranchGroup sceneBG;
@@ -36,16 +25,16 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	private static BookGame bookgame;
 	protected static Map<String, Boolean> bookshelfUsage = new HashMap<>();
 	private boolean bookGameActive = false;
-	private boolean isCrouching = false;
-	private boolean isJumping = false;
-	private float defaultHeight;
-	private Transform3D lastViewTransform = new Transform3D();
 	private static int points = 0;
 	private JLabel pointsLabel;
 	private JLabel timerLabel;
 	private Timer gameTimer;
-	private int timeRemaining = 300; // 5 minutes in seconds
+	private int timeRemaining = 300;
 	private boolean gameOver = false;
+	private Movement movement;
+	private SoundManager soundManager;
+	private GhostObject ghostObject; // Reference to the GhostObject
+	private Library library; // Persistent Library instance
 
 	private static class CustomCanvas3D extends Canvas3D {
 		public CustomCanvas3D(GraphicsConfiguration config) {
@@ -59,16 +48,28 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		}
 	}
 
-	public static BranchGroup create_Scene() {
+	public BranchGroup create_Scene() {
 		BranchGroup sceneBG = new BranchGroup();
 		TransformGroup sceneTG = new TransformGroup();
-		sceneTG.addChild(Library.create_Library());
+		Library library = new Library();
+		sceneTG.addChild(library.create_Library());
+
+		// Find the GhostObject in the library's objects
+		for (Objects obj : library.getObjects()) {
+			if (obj instanceof GhostObject) {
+				ghostObject = (GhostObject) obj;
+				break;
+			}
+		}
+
 		sceneBG.addChild(sceneTG);
 		sceneBG.addChild(CommonsSK.add_Lights(CommonsSK.White, 1));
 		return sceneBG;
 	}
 
 	public MainClass() {
+		soundManager = new SoundManager();
+
 		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
 		canvas = new CustomCanvas3D(config);
 		canvas.setFocusable(true);
@@ -79,30 +80,28 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		setLayout(new BorderLayout());
 		add(canvas, BorderLayout.CENTER);
 
-		// Top panel for timer (left) and points (right)
 		JPanel topPanel = new JPanel();
 		topPanel.setOpaque(true);
 		topPanel.setBackground(Color.WHITE);
-		topPanel.setLayout(new BorderLayout()); // Use BorderLayout for left/right positioning
+		topPanel.setLayout(new BorderLayout());
 
-		// Timer label (left)
 		timerLabel = new JLabel("Time: 05:00");
 		timerLabel.setForeground(Color.BLACK);
 		timerLabel.setFont(new Font("Serif", Font.BOLD, 16));
-		timerLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0)); // Add padding on the left
+		timerLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
 		topPanel.add(timerLabel, BorderLayout.WEST);
 
-		// Points label (right)
 		pointsLabel = new JLabel("Puzzles Solved: " + points);
 		pointsLabel.setForeground(Color.BLACK);
 		pointsLabel.setFont(new Font("Serif", Font.BOLD, 16));
-		pointsLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10)); // Add padding on the right
+		pointsLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
 		topPanel.add(pointsLabel, BorderLayout.EAST);
 
 		add(topPanel, BorderLayout.NORTH);
 
 		SimpleUniverse universe = new SimpleUniverse(canvas);
 		viewTG = universe.getViewingPlatform().getViewPlatformTransform();
+		movement = new Movement(viewTG);
 
 		if (Library.characterTG == null) {
 			Library.characterTG = new TransformGroup();
@@ -126,14 +125,15 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		Transform3D initialView = new Transform3D();
 		initialView.setTranslation(new Vector3f(0f, 2f, 20f));
 		viewTG.setTransform(initialView);
-		lastViewTransform.set(initialView);
 
-		defaultHeight = Library.position.y;
+		// Ensure the ghost is hidden initially
+		if (ghostObject != null) {
+			ghostObject.hideGhost();
+		}
 
 		sceneBG.compile();
 		universe.addBranchGraph(sceneBG);
 
-		// Start the timer
 		startTimer();
 	}
 
@@ -158,7 +158,33 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 
 	private void handleGameOver() {
 		gameOver = true;
-		playYouLoseSound();
+		soundManager.playSound("lose.wav", false);
+
+		// Show the ghost in front of the character
+		if (ghostObject != null) {
+			// Get the character's position and orientation
+			Transform3D viewTransform = new Transform3D();
+			viewTG.getTransform(viewTransform);
+			Vector3f characterPos = new Vector3f();
+			viewTransform.get(characterPos);
+
+			// Get the character's forward direction (Z-axis in view space)
+			Vector3f forward = new Vector3f(0, 0, -1); // Forward in view space (negative Z)
+			viewTransform.transform(forward);
+			forward.normalize();
+
+			// Position the ghost 2 units in front of the character
+			float distanceInFront = 2.0f;
+			Vector3f ghostPos = new Vector3f(forward);
+			ghostPos.scale(distanceInFront);
+			ghostPos.add(characterPos);
+			ghostPos.y = characterPos.y - 0.5f; // Lower the ghost by 1 unit relative to the character
+
+			// Update the ghost's position and show it
+			ghostObject.setPosition(ghostPos);
+			ghostObject.showGhost();
+		}
+
 		int option = JOptionPane.showConfirmDialog(
 				this,
 				"Game Over! Time's up.\nDo you want to restart the game?",
@@ -174,47 +200,27 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		}
 	}
 
-	private void playYouLoseSound() {
-		try {
-			URL soundURL = MainClass.class.getResource("youlose.wav");
-			if (soundURL == null) {
-				System.err.println("youlose.wav not found!");
-				return;
-			}
-			AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundURL);
-			Clip clip = AudioSystem.getClip();
-			clip.open(audioIn);
-			clip.start();
-		} catch (Exception ex) {
-			System.err.println("Error playing 'You Lose' sound: " + ex.getMessage());
-		}
-	}
-
 	private void restartGame() {
-		// Reset game state
 		points = 0;
 		bookshelfUsage.clear();
 		timeRemaining = 300;
 		gameOver = false;
 
-		// Reset the view and position
 		Transform3D initialView = new Transform3D();
-		initialView.setTranslation(new Vector3f(0f, 2f, 20f));
+		initialView.setTranslation(new Vector3f(0f, 2f, 0f));
 		viewTG.setTransform(initialView);
-		lastViewTransform.set(initialView);
 		Library.position.set(new Vector3f(0f, 2f, 20f));
-		yaw = 0.0f;
-		pitch = 0.0f;
 		firstMouse = true;
 
-		// Reset UI
 		pointsLabel.setText("Puzzles Solved: " + points);
 		timerLabel.setText("Time: 05:00");
 
-		// Restart the timer
-		startTimer();
+		// Hide the ghost again on restart
+		if (ghostObject != null) {
+			ghostObject.hideGhost();
+		}
 
-		// Request focus for the canvas
+		startTimer();
 		canvas.requestFocusInWindow();
 	}
 
@@ -228,27 +234,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 
 	public void markShelfAsUsed(String shelfId) {
 		bookshelfUsage.put(shelfId, true);
-	}
-
-	private boolean tryMove(Vector3f proposedPosition) {
-		Transform3D tempTransform = new Transform3D();
-		tempTransform.setTranslation(proposedPosition);
-		Library.characterTG.setTransform(tempTransform);
-
-		CollisionDetectCharacter.colliding = false;
-		try {
-			Thread.sleep(10);
-		} catch (InterruptedException ex) {
-			ex.printStackTrace();
-		}
-
-		if (CollisionDetectCharacter.colliding) {
-			System.out.println("Collision detected at " + proposedPosition + ", reverting to " + Library.position);
-			tempTransform.setTranslation(Library.position);
-			Library.characterTG.setTransform(tempTransform);
-			return false;
-		}
-		return true;
 	}
 
 	@Override
@@ -279,55 +264,7 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		int deltaY = y - lastMouseY;
 		lastMouseX = x;
 		lastMouseY = y;
-
-		if (!e.isShiftDown()) {
-			yaw += deltaX * rotationSensitivity;
-			pitch += deltaY * rotationSensitivity;
-			float pitchLimit = (float) Math.toRadians(89);
-			pitch = Math.max(-pitchLimit, Math.min(pitchLimit, pitch));
-			updateLook();
-			System.out.println("Mouse moved: deltaX=" + deltaX + ", deltaY=" + deltaY + ", yaw=" + yaw + ", pitch=" + pitch);
-		}
-	}
-
-	private void updateLook() {
-		if (!bookGameActive) {
-			Transform3D rotation = new Transform3D();
-			rotation.rotY(yaw);
-			Transform3D pitchRot = new Transform3D();
-			pitchRot.rotX(pitch);
-			rotation.mul(pitchRot);
-			Transform3D translation = new Transform3D();
-			translation.setTranslation(new Vector3f(Library.position.x, Library.position.y, Library.position.z));
-			Transform3D viewTransform = new Transform3D();
-			viewTransform.mul(translation, rotation);
-			viewTG.setTransform(viewTransform);
-			viewTG.getTransform(lastViewTransform);
-		}
-	}
-
-	private void restoreViewState() {
-		viewTG.setTransform(lastViewTransform);
-		Library.characterTG.setTransform(lastViewTransform);
-		Library.position.set(getPositionFromTransform(lastViewTransform));
-
-		Vector3f pos = new Vector3f();
-		lastViewTransform.get(pos);
-		System.out.println("View restored to transform position: " + pos + ", yaw: " + yaw + ", pitch: " + pitch);
-
-		firstMouse = true;
-		Point mousePos = canvas.getMousePosition();
-		if (mousePos != null) {
-			lastMouseX = mousePos.x;
-			lastMouseY = mousePos.y;
-			System.out.println("Mouse position reset to: (" + lastMouseX + ", " + lastMouseY + ") on restore");
-		}
-	}
-
-	private Vector3f getPositionFromTransform(Transform3D transform) {
-		Vector3f pos = new Vector3f();
-		transform.get(pos);
-		return pos;
+		movement.processMouseMovement(deltaX, deltaY, e.isShiftDown());
 	}
 
 	@Override
@@ -384,11 +321,14 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 						}
 						System.out.println("No shelf found in hierarchy above book!");
 						return;
+					} else if ("door".equals(userData) || "door_open".equals(userData)) {
+						movement.toggleNearbyDoors();
+						return;
 					}
 				}
 				node = node.getParent();
 			}
-			System.out.println("Clicked object is not a book or lacks 'book' userData");
+			System.out.println("Clicked object is not a book or door or lacks appropriate userData");
 		} else {
 			System.out.println("Nothing picked at (" + e.getX() + ", " + e.getY() + ")");
 		}
@@ -396,9 +336,7 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 
 	private void startBookOrderingGame(int shelfNumber, String shelfId) {
 		SwingUtilities.invokeLater(() -> {
-			viewTG.getTransform(lastViewTransform);
-			System.out.println("Saved view transform before game: " + getPositionFromTransform(lastViewTransform));
-
+			movement.saveViewState();
 			bookGameActive = true;
 			BookOrderingGame game = new BookOrderingGame(shelfNumber, shelfId, this);
 			game.addWindowListener(new WindowAdapter() {
@@ -406,7 +344,48 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 				public void windowClosed(WindowEvent e) {
 					bookGameActive = false;
 					canvas.requestFocusInWindow();
-					restoreViewState();
+					movement.restoreViewState();
+					firstMouse = true;
+					Point mousePos = canvas.getMousePosition();
+					if (mousePos != null) {
+						lastMouseX = mousePos.x;
+						lastMouseY = mousePos.y;
+						System.out.println("Mouse position reset to: (" + lastMouseX + ", " + lastMouseY + ") on restore");
+					}
+					// Check if the game was won and trigger book swapping
+					if (game.isGameWon()) {
+						System.out.println("Book ordering game won for " + shelfId + "! Triggering book swap...");
+						//library.checkWinAndSwap();
+
+						// Check if all puzzles are solved (win condition)
+						boolean allPuzzlesSolved = true;
+						for (int i = 1; i <= 8; i++) {
+							String currentShelfId = "shelf_" + i;
+							if (!bookshelfUsage.getOrDefault(currentShelfId, false)) {
+								allPuzzlesSolved = false;
+								break;
+							}
+						}
+
+						// If all puzzles are solved, automatically open the doors
+						if (allPuzzlesSolved) {
+							System.out.println("All puzzles solved! Player has won the game. Opening doors...");
+							// Ensure doors are opened (if not already open)
+							for (TransformGroup doorTG : Library.doors) {
+								Object userData = doorTG.getUserData();
+								boolean isOpen = userData instanceof String && ((String) userData).startsWith("door_open");
+								if (!isOpen) {
+									movement.toggleNearbyDoors();
+									break; // toggleNearbyDoors will handle both doors
+								}
+							}
+							// Optionally, show a win message
+							JOptionPane.showMessageDialog(MainClass.this,
+									"Congratulations! You’ve solved all puzzles and won the game!\nThe doors are now open.",
+									"Victory",
+									JOptionPane.INFORMATION_MESSAGE);
+						}
+					}
 				}
 			});
 			System.out.println("BookOrderingGame launched for Shelf " + shelfNumber);
@@ -416,134 +395,18 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if (bookGameActive || gameOver) return;
-
-		float moveX = 0, moveZ = 0, moveY = 0;
-		boolean updatePosition = false;
-
-		switch (e.getKeyCode()) {
-			case KeyEvent.VK_W:
-			case KeyEvent.VK_UP:
-				moveX = -(float) (Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				moveZ = -(float) (Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				updatePosition = true;
-				break;
-			case KeyEvent.VK_S:
-			case KeyEvent.VK_DOWN:
-				moveX = (float) (Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				moveZ = (float) (Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				updatePosition = true;
-				break;
-			case KeyEvent.VK_A:
-			case KeyEvent.VK_LEFT:
-				moveX = -(float) Math.cos(yaw) * MOVE_STEP;
-				moveZ = (float) Math.sin(yaw) * MOVE_STEP;
-				updatePosition = true;
-				break;
-			case KeyEvent.VK_D:
-			case KeyEvent.VK_RIGHT:
-				moveX = (float) Math.cos(yaw) * MOVE_STEP;
-				moveZ = -(float) Math.sin(yaw) * MOVE_STEP;
-				updatePosition = true;
-				break;
-			case KeyEvent.VK_SPACE:
-				if (!isJumping && !isCrouching) {
-					isJumping = true;
-					Vector3f jumpPosition = new Vector3f(Library.position);
-					jumpPosition.y += JUMP_HEIGHT;
-					System.out.println("Attempting jump to: " + jumpPosition);
-					if (tryMove(jumpPosition)) {
-						Library.lastSafePosition.set(Library.position);
-						Library.position.set(jumpPosition);
-						Movement.updatePosition();
-						System.out.println("Jumped to: " + Library.position);
-					} else {
-						System.out.println("Jump blocked by collision");
-					}
-					Vector3f returnPosition = new Vector3f(Library.position);
-					returnPosition.y = defaultHeight;
-					if (tryMove(returnPosition)) {
-						Library.lastSafePosition.set(Library.position);
-						Library.position.set(returnPosition);
-						Movement.updatePosition();
-						System.out.println("Returned to: " + Library.position);
-					} else {
-						System.out.println("Return blocked by collision");
-					}
-					isJumping = false;
-					updatePosition = false;
-				}
-				break;
-			case KeyEvent.VK_CONTROL:
-				if (!isCrouching && !isJumping) {
-					moveY = -CROUCH_HEIGHT;
-					isCrouching = true;
-					updatePosition = true;
-					System.out.println("Crouching to height: " + (Library.position.y + moveY));
-				}
-				break;
-			default:
-				return;
-		}
-
-		if (updatePosition) {
-			Vector3f proposedPosition = new Vector3f(Library.position);
-			proposedPosition.x += moveX;
-			proposedPosition.z += moveZ;
-			proposedPosition.y += moveY;
-
-			if (tryMove(proposedPosition)) {
-				Library.lastSafePosition.set(Library.position);
-				Library.position.set(proposedPosition);
-				Movement.updatePosition();
-				System.out.println("Moved to: " + Library.position);
-			} else {
-				System.out.println("Blocked by collision at: " + proposedPosition);
-			}
-
-			updateLook();
-		}
+		movement.keyPressed(e);
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
 		if (bookGameActive || gameOver) return;
-
-		if (e.getKeyCode() == KeyEvent.VK_CONTROL && isCrouching) {
-			Vector3f proposedPosition = new Vector3f(Library.position);
-			proposedPosition.y = defaultHeight;
-
-			if (tryMove(proposedPosition)) {
-				Library.lastSafePosition.set(Library.position);
-				Library.position.set(proposedPosition);
-				Movement.updatePosition();
-				System.out.println("Standing up to: " + Library.position);
-			} else {
-				System.out.println("Can’t stand up due to collision at: " + proposedPosition);
-			}
-
-			isCrouching = false;
-			updateLook();
-		}
-	}
-
-	private static void startBackgroundSound() {
-		try {
-			URL soundURL = MainClass.class.getResource("Horrorsound.wav");
-			if (soundURL == null) {
-				System.err.println("Horrorsound.wav not found!");
-				return;
-			}
-			AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundURL);
-			Clip clip = AudioSystem.getClip();
-			clip.open(audioIn);
-			clip.loop(Clip.LOOP_CONTINUOUSLY);
-		} catch (Exception ex) {
-			System.err.println("Error loading background sound: " + ex.getMessage());
-		}
+		movement.keyReleased(e);
 	}
 
 	public static void main(String[] args) {
-		startBackgroundSound();
+		SoundManager soundManager = new SoundManager();
+		soundManager.playSound("Horror.wav", true);
 		SwingUtilities.invokeLater(() -> {
 			frame = new JFrame("Haunted Leddy");
 			MainClass mainPanel = new MainClass();

@@ -427,4 +427,7 @@ public class BookOrderingGame extends JFrame {
                 .filter(ch -> Character.isLetter(ch) && "aeiouy".indexOf(ch) == -1)
                 .count();
     }
+    public boolean isGameWon() {
+        return puzzleSolved;
+    }
 }
