@@ -116,11 +116,11 @@ public abstract class Objects {
 		textureAttrib.setTextureMode(TextureAttributes.REPLACE);
 		app.setTextureAttributes(textureAttrib);
 
-		float scl = 4f;                                  // need to rearrange the four quarters
-		Vector3d scale = new Vector3d(scl, scl, scl);
-		Transform3D transMap = new Transform3D();
-		transMap.setScale(scale);
-		textureAttrib.setTextureTransform(transMap);
+//		float scl = 1f;                                  // need to rearrange the four quarters
+//		Vector3d scale = new Vector3d(scl, scl, scl);
+//		Transform3D transMap = new Transform3D();
+//		transMap.setScale(scale);
+//		textureAttrib.setTextureTransform(transMap);
 		return app;
 	}
 
@@ -161,6 +161,24 @@ class WallObject extends Objects {
 	}
 }
 
+class PillarObject extends Objects {
+	public PillarObject(String texture_name) {                 //Filename for the object
+		super();
+		this.texture_name = texture_name;
+		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0.05f, 1.5f, -4f);                // Define the location of the wall object
+		transform_Object("DoorOpeningWall");                     // set transformation to 'objTG' and load object file
+	}
+
+	public TransformGroup position_Object() {
+		objTG.addChild(objBG);
+		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
+	}
+}
 
 class ShelfObject extends Objects {
 	// Added: Shared geometry for all ShelfObject instances
