@@ -49,14 +49,14 @@ public abstract class Objects {
 	}
 
 	/* function to set 'objTG' and attach object after loading the model from external file */
-	protected void transform_Object(String obj_name) {
+	protected void transform_Object(String obj_name, int x) {
 		this.obj_name = obj_name;
 		Transform3D scaler = new Transform3D();
 		scaler.setScale(scale);                            // set scale for the 4x4 matrix
 		scaler.setTranslation(post);                       // set translations for the 4x4 matrix
 		objTG = new TransformGroup(scaler);                // set the translation BG with the 4x4 matrix
 		objBG = loadShape(obj_name).getSceneGroup();
-		Appearance app = obj_Appearance();                 // Create the appearance with texture
+		Appearance app = obj_Appearance(x);                 // Create the appearance with texture
 		// load external object to 'objBG'
 		for (int i = 0; i < objBG.numChildren(); i++) {   //Make all the objects pickable
 			Node child = objBG.getChild(i);
@@ -95,7 +95,7 @@ public abstract class Objects {
 		return texture;
 	}
 
-	protected Appearance obj_Appearance() {
+	protected Appearance obj_Appearance(int x) {
 		Material mtl = new Material();                     // define material's attributes
 		mtl.setShininess(shine);
 		mtl.setAmbientColor(mtl_clr[0]);                   // use them to define different materials
@@ -116,11 +116,11 @@ public abstract class Objects {
 		textureAttrib.setTextureMode(TextureAttributes.REPLACE);
 		app.setTextureAttributes(textureAttrib);
 
-//		float scl = 1f;                                  // need to rearrange the four quarters
-//		Vector3d scale = new Vector3d(scl, scl, scl);
-//		Transform3D transMap = new Transform3D();
-//		transMap.setScale(scale);
-//		textureAttrib.setTextureTransform(transMap);
+		float scl = x;                                  // need to rearrange the four quarters
+		Vector3d scale = new Vector3d(scl, scl, scl);
+		Transform3D transMap = new Transform3D();
+		transMap.setScale(scale);
+		textureAttrib.setTextureTransform(transMap);
 		return app;
 	}
 
@@ -148,7 +148,7 @@ class WallObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0.05f, 1.5f, -4f);                // Define the location of the wall object
-		transform_Object("DoorOpeningWall");                     // set transformation to 'objTG' and load object file
+		transform_Object("DoorOpeningWall",0);                     // set transformation to 'objTG' and load object file
 	}
 
 	public TransformGroup position_Object() {
@@ -167,7 +167,26 @@ class PillarObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0.05f, 1.5f, -4f);                // Define the location of the wall object
-		transform_Object("DoorOpeningWall");                     // set transformation to 'objTG' and load object file
+		transform_Object("DoorOpeningWall",4);                     // set transformation to 'objTG' and load object file
+	}
+
+	public TransformGroup position_Object() {
+		objTG.addChild(objBG);
+		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
+	}
+}
+
+class CubicleObject extends Objects {
+	public CubicleObject(String texture_name) {                 //Filename for the object
+		super();
+		this.texture_name = texture_name;
+		scale = 2d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0f, 0f, 0f);                // Define the location of the wall object
+		transform_Object("Cubicle",0);                     // set transformation to 'objTG' and load object file
 	}
 
 	public TransformGroup position_Object() {
@@ -200,7 +219,7 @@ class ShelfObject extends Objects {
 		obj_shape.setName("EmptySelf");
 		obj_shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
 		obj_shape.setPickable(true);
-		Appearance app = obj_Appearance();                  // set appearance after converting object node to Shape3D
+		Appearance app = obj_Appearance(1);                  // set appearance after converting object node to Shape3D
 		obj_shape.setAppearance(app);
 	}
 
@@ -238,7 +257,7 @@ class LightObject extends Objects {
 		obj_shape.setName("LightingPanel");
 		obj_shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
 		obj_shape.setPickable(true);
-		Appearance app = obj_Appearance();                  // set appearance after converting object node to Shape3D
+		Appearance app = obj_Appearance(4);                  // set appearance after converting object node to Shape3D
 		obj_shape.setAppearance(app);
 	}
 
@@ -263,7 +282,7 @@ class DoorObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 0.4d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(-0.17f, -0.03f, 0f);                // location to connect "FanSwitch" with "FanStand"
-		transform_Object("doorleft");                     // set transformation to 'objTG' and load object file
+		transform_Object("doorleft",0);                     // set transformation to 'objTG' and load object file
 	//	obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
@@ -284,7 +303,7 @@ class HandleObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 0.8d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0f, 0f, 0f);                   // location to connect "FanSwitch" with "FanStand"
-		transform_Object(filename);                    // set transformation to 'objTG' and load object file
+		transform_Object(filename,0);                    // set transformation to 'objTG' and load object file
 	//	obj_Appearance();                                  // set appearance after converting object node to Shape3D
 	}
 
@@ -319,7 +338,7 @@ class GroupbooksObject extends Objects {
 		obj_shape.setName(object_name);
 		obj_shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
 		obj_shape.setPickable(true);
-		Appearance app = obj_Appearance();                  // set appearance after converting object node to Shape3D
+		Appearance app = obj_Appearance(4);                  // set appearance after converting object node to Shape3D
 		obj_shape.setAppearance(app);
 	}
 
@@ -362,8 +381,8 @@ class SinglebookObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 0.2d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0f, 1.01f, 0f);         // location to connect "FanSwitch" with "FanStand"
-		transform_Object("Singlebook1");                     // set transformation to 'objTG' and load object file
-		obj_Appearance();                                  // set appearance after converting object node to Shape3D
+		transform_Object("Singlebook1",0);                     // set transformation to 'objTG' and load object file
+		obj_Appearance(0);                                  // set appearance after converting object node to Shape3D
 	}
 
 	public TransformGroup position_Object() {

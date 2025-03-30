@@ -100,24 +100,24 @@ public class Library {
         Shifted4.addChild(booksRowTG5);
 
 //        //Light Object Offset
-//        Transform3D Offset = new Transform3D();
-//        Offset.setTranslation(new Vector3f(0.4f, 1.1f, 0.3f)); // Changed from (0f, 0f, 5f) to (5f, 0f, 0f)
-//        
-//        TransformGroup Lights = new LightObject("LightTexture.jpg").position_Object();  //Create light objects
-//        Lights.setTransform(Offset);
-//        
-//     // Add second light
-//        Transform3D offset2 = new Transform3D();
-//        offset2.setTranslation(new Vector3f(5f, 1.1f, 0.3f));
-//        TransformGroup light2TG = new LightObject("LightTexture.jpg").position_Object();
-//        light2TG.setTransform(offset2);
-//        ShelfTG.addChild(light2TG);
-//        ShelfTG.addChild(booksRowTG1);
-//        ShelfTG.addChild(Shifted);
-//        ShelfTG.addChild(Shifted2);
-//        ShelfTG.addChild(Shifted3);
-//        ShelfTG.addChild(Shifted4);
-//        ShelfTG.addChild(Lights);   //Add lights to shelves
+        Transform3D Offset = new Transform3D();
+        Offset.setTranslation(new Vector3f(0.4f, 1.1f, 0.3f)); // Changed from (0f, 0f, 5f) to (5f, 0f, 0f)
+        
+        TransformGroup Lights = new LightObject("LightTexture.jpg").position_Object();  //Create light objects
+        Lights.setTransform(Offset);
+        
+     // Add second light
+        Transform3D offset2 = new Transform3D();
+        offset2.setTranslation(new Vector3f(5f, 1.1f, 0.3f));
+        TransformGroup light2TG = new LightObject("LightTexture.jpg").position_Object();
+        light2TG.setTransform(offset2);
+        ShelfTG.addChild(light2TG);
+        ShelfTG.addChild(booksRowTG1);
+        ShelfTG.addChild(Shifted);
+        ShelfTG.addChild(Shifted2);
+        ShelfTG.addChild(Shifted3);
+        ShelfTG.addChild(Shifted4);
+        ShelfTG.addChild(Lights);   //Add lights to shelves
 
         // Add shelf number label (unchanged)
 //        Text2D shelfLabel = new Text2D("Shelf " + shelfNumber, new Color3f(1f, 1f, 1f), "Serif", 12, Font.PLAIN);
@@ -191,6 +191,7 @@ public class Library {
         object3D[8] = new SquareShape("FloorTexture.jpeg", 4f, 0.01f, 7f);     //Second floor
         object3D[9] = new HandleObject("ImageMetal2.jpg", "DoorHandleRight" );    //Handle Object (Right)
         object3D[10] = new HandleObject("ImageMetal2.jpg", "DoorHandleLeft");    //Handle Object (Left)
+
         Transform3D scaleTransform = new Transform3D();
         scaleTransform.setScale(object3D[7].scale);
 
@@ -255,15 +256,27 @@ public class Library {
         //Pillars
         
         // LEFT Wall offset
-        Transform3D Offset5 = new Transform3D();             // To position the door handles properly
+        Transform3D Offset5 = new Transform3D();             // Correction to position
         Offset5.setTranslation(new Vector3f(-4f, 0.0f, 10f));
         object3D[12] = new SquareShape("beige_image.jpg", 0.05f, 4f, 9f); // Create Left and right wall dimensions
         
         TransformGroup ExtraWallTG = object3D[12].position_Object();
         ExtraWallTG.setTransform(Offset5);
+        
+        //Cubicle offset
+        Transform3D Offset6 = new Transform3D();             // Correction to position
+        Offset6.setTranslation(new Vector3f(0f, 1f, 0f));
+        
+        object3D[11] = new CubicleObject("ImageMetal2.jpg");    //Cubicle object
+        TransformGroup CubicleTG = object3D[11].position_Object();
+        CubicleTG.setTransform(Offset6);                        //Set the offset for the transform group of the cubicle
+        
+
+        
         // Attaching shelves to floor
         object3D[0].add_Child(shelvesTG1);
         object3D[0].add_Child(shelvesTG2);
+        object3D[0].add_Child(CubicleTG);
         
         // Adding door handles to DoorObject using the single TransformGroups
         object3D[6].add_Child(handleRightTG);                    // Add RIGHT handle to door
