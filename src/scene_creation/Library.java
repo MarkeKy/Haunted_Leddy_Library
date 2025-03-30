@@ -99,25 +99,28 @@ public class Library {
         Shifted4.setTransform(shift);
         Shifted4.addChild(booksRowTG5);
 
-        shift.setTranslation(new Vector3f(0, 0f, 0f));
-        Shifted5.setTransform(shift);
-        Shifted5.addChild(new SinglebookObject("ImageEmrald.jpg").position_Object());
-
-        ShelfTG.addChild(booksRowTG1);
-        ShelfTG.addChild(Shifted);
-        ShelfTG.addChild(Shifted2);
-        ShelfTG.addChild(Shifted3);
-        ShelfTG.addChild(Shifted4);
-        ShelfTG.addChild(Shifted5);
+        //Light Object Offset
+        Transform3D Offset = new Transform3D();
+        Offset.setTranslation(new Vector3f(0.4f, 1.1f, 0f)); // Changed from (0f, 0f, 5f) to (5f, 0f, 0f)
+        
+        TransformGroup Lights = new LightObject("LightTexture.jpg").position_Object();  //Create light objects
+        Lights.setTransform(Offset);
+//      
+//        ShelfTG.addChild(booksRowTG1);
+//        ShelfTG.addChild(Shifted);
+//        ShelfTG.addChild(Shifted2);
+//        ShelfTG.addChild(Shifted3);
+//        ShelfTG.addChild(Shifted4);
+        ShelfTG.addChild(Lights);   //Add lights to shelves
 
         // Add shelf number label (unchanged)
-        Text2D shelfLabel = new Text2D("Shelf " + shelfNumber, new Color3f(1f, 1f, 1f), "Serif", 12, Font.PLAIN);
-        TransformGroup labelTG = new TransformGroup();
-        Transform3D labelTrans = new Transform3D();
-        labelTrans.setTranslation(new Vector3f(1.0f, 1.0f, 1f)); // Above shelf
-        labelTG.setTransform(labelTrans);
-        labelTG.addChild(shelfLabel);
-        ShelfTG.addChild(labelTG);
+//        Text2D shelfLabel = new Text2D("Shelf " + shelfNumber, new Color3f(1f, 1f, 1f), "Serif", 12, Font.PLAIN);
+//        TransformGroup labelTG = new TransformGroup();
+//        Transform3D labelTrans = new Transform3D();
+//        labelTrans.setTranslation(new Vector3f(1.0f, 1.0f, 1f)); // Above shelf
+//        labelTG.setTransform(labelTrans);
+//        labelTG.addChild(shelfLabel);
+//        ShelfTG.addChild(labelTG);
 
         // Apply rotation and translation
         TransformGroup positionedShelfTG = new TransformGroup();
@@ -171,15 +174,15 @@ public class Library {
         cds.setSchedulingBounds(new BoundingSphere(new Point3d(0, 0, 0), 100));
         characterTG.addChild(cds);
 
-        object3D[0] = new SquareShape("CarpetTexture.jpeg", 4f, 0.01f, 4f); // Create "FloorObject"
+        object3D[0] = new SquareShape("CarpetTexture.jpeg", 4f, 0.01f, 6f); // Create "FloorObject"
         object3D[1] = new SquareShape("MarbleTexture.jpg", 4f, 4f, 0.05f); // Create Front and Back wall dimensions
         object3D[2] = new SquareShape("MarbleTexture.jpg", 4f, 4f, 0.05f); // Create Front and Back wall dimensions
         object3D[3] = new WallObject("MarbleTexture.jpg"); // Create dimensions for open wall
         object3D[4] = new SquareShape("MarbleTexture.jpg", 0.05f, 4f, 8f); // Create Left and right wall dimensions
-        object3D[5] = new SquareShape("MarbleTexture.jpg", 4f, 0.01f, 8f); // Create ceiling, same dimensions as floor
+        object3D[5] = new SquareShape("ImageFloor2.jpg", 4f, 0.01f, 8f); // Create ceiling, same dimensions as floor
         object3D[6] = new DoorObject("DoorTexture.jfif"); // Create the first door object
         object3D[7] = new DoorObject("DoorTexture.jfif"); // Create the second door object
-        object3D[8] = new SquareShape("leddyfloor.jpeg", 4f, 0.01f, 4f);
+        object3D[8] = new SquareShape("FloorTexture.jpeg", 4f, 0.01f, 6f);     //Second floor
         object3D[9] = new HandleObject("ImageMetal2.jpg", "DoorHandleRight" );    //Handle Object (Right)
         object3D[10] = new HandleObject("ImageMetal2.jpg", "DoorHandleLeft");    //Handle Object (Left)
         
@@ -203,22 +206,23 @@ public class Library {
         yAxis.setTranslation(new Vector3f(0f, 0.15f, 0));
         object3D[4] = new SquareShape("MarbleTexture.jpg", 0.05f, 4f, 4f);
 
-        TransformGroup frontWallTG = define_wall(object3D[1].position_Object(), new Vector3f(0f, 4f, 9f)); //Where the bookshelfs are
-        TransformGroup backWallTG = define_wall(object3D[2].position_Object(), new Vector3f(0f, 4f, -4f));
+        TransformGroup frontWallTG = define_wall(object3D[1].position_Object(), new Vector3f(0f, 4f, 11f)); //Where the bookshelfs are
+        TransformGroup backWallTG = define_wall(object3D[2].position_Object(), new Vector3f(0f, 4f, -6f));
         TransformGroup leftWallTG = define_wall(object3D[3].position_Object(), new Vector3f(-4f, 4f, 4));
         leftWallTG.setTransform(yAxis);
         TransformGroup rightWallTG = define_wall(object3D[4].position_Object(), new Vector3f(4f, 4f, 0));
         TransformGroup ceilingTG = define_wall(object3D[5].position_Object(), new Vector3f(0f, 4.15f, 0));
         
-        TransformGroup WoodFloorTG = define_wall(object3D[8].position_Object(), new Vector3f(0f, 0f, 5f)); //Wood floor for the shelves
+        TransformGroup WoodFloorTG = define_wall(object3D[8].position_Object(), new Vector3f(0f, 0f, 6f)); //Wood floor for the shelves
 
         // Numbered shelves: 1-5 and 6-10
-        TransformGroup shelvesTG1 = createShelves(5, 1.5f, "ImageFloor2.jpg", 1);
-        TransformGroup shelvesTG2 = createShelves(5, 1.5f, "ImageFloor2.jpg", 6);
+        TransformGroup shelvesTG1 = createShelves(5, 2f, "BookshelfTexture.jpeg", 1);
+        TransformGroup shelvesTG2 = createShelves(5, 2f, "BookshelfTexture.jpeg", 6);
         
+        //Offsets for shelves
 
         Transform3D Offset = new Transform3D();
-        Offset.setTranslation(new Vector3f(5.0f, 0.0f, 5f)); // Changed from (0f, 0f, 5f) to (5f, 0f, 0f)
+        Offset.setTranslation(new Vector3f(5f, 0.0f, 5f)); // Changed from (0f, 0f, 5f) to (5f, 0f, 0f)
         shelvesTG2.setTransform(Offset);
         
         Transform3D Offset2 = new Transform3D();             //To move shelves to wood floor

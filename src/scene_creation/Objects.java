@@ -200,6 +200,45 @@ class ShelfObject extends Objects {
 	}
 }
 
+class LightObject extends Objects {
+	// Added: Shared geometry for all LightObject instances
+	private static Geometry shelfGeometry;
+
+	public LightObject(String texture_name) {                 //Filename for the object
+		super();
+		this.texture_name = texture_name;
+		scale = 2d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0f, 1.01f, 0f);                // location to connect "FanSwitch" with "FanStand"
+		// Load geometry only once
+		if (shelfGeometry == null) {
+			Scene s = loadShape("LightingPanel");
+			BranchGroup bg = s.getSceneGroup();
+			Shape3D shape = (Shape3D) bg.getChild(0);
+			shelfGeometry = shape.getGeometry();
+		}
+		obj_shape = new Shape3D(shelfGeometry);             // Use shared geometry
+		obj_shape.setName("LightingPanel");
+		obj_shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+		obj_shape.setPickable(true);
+		Appearance app = obj_Appearance();                  // set appearance after converting object node to Shape3D
+		obj_shape.setAppearance(app);
+	}
+
+	public TransformGroup position_Object() {
+		Transform3D scaler = new Transform3D();
+		scaler.setScale(scale);
+		scaler.setTranslation(post);
+		objTG = new TransformGroup(scaler);
+		objTG.addChild(obj_shape);                          // Changed from objBG to obj_shape
+		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
+	}
+}
+
+
 class DoorObject extends Objects {
 	public DoorObject(String texture_name) {                 //Filename for the object
 		super();

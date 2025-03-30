@@ -55,13 +55,13 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	    // Create a LineArray with 12 vertices for 6 lines (2 per axis)
 	    LineArray axisLines = new LineArray(12, LineArray.COORDINATES | LineArray.COLOR_3);
 	    
-	    // X-axis: Negative part (Yellow)
+	    // Z-axis: Positive part (Yellow)
 	    axisLines.setCoordinate(0, new Point3f(-100.0f, 0.0f, 0.0f)); // Start of negative X
 	    axisLines.setCoordinate(1, new Point3f(0.0f, 0.0f, 0.0f));    // End at origin
 	    axisLines.setColor(0, new Color3f(1.0f, 0.0f, 0.0f));         // Yellow
 	    axisLines.setColor(1, new Color3f(1.0f, 0.0f, 0.0f));         // Yellow
 	    
-	    // X-axis: Positive part (Blue)
+	    // Z-axis: Negative part (Blue)
 	    axisLines.setCoordinate(2, new Point3f(0.0f, 0.0f, 0.0f));    // Start at origin
 	    axisLines.setCoordinate(3, new Point3f(100.0f, 0.0f, 0.0f));  // End of positive X
 	    axisLines.setColor(2, new Color3f(1.0f, 0.5f, 0.0f));         // Blue
@@ -79,13 +79,13 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	    axisLines.setColor(6, new Color3f(0.0f, 1.0f, 0.0f));         // Green
 	    axisLines.setColor(7, new Color3f(0.0f, 1.0f, 0.0f));         // Green
 	    
-	    // Z-axis: Negative part (Red)
+	    // X-axis: Positive part (Red)
 	    axisLines.setCoordinate(8, new Point3f(0.0f, 0.0f, -100.0f)); // Start of negative Z
 	    axisLines.setCoordinate(9, new Point3f(0.0f, 0.0f, 0.0f));    // End at origin
 	    axisLines.setColor(8, new Color3f(0.0f, 0.0f, 1.0f));         // Red
 	    axisLines.setColor(9, new Color3f(0.0f, 0.0f, 1.0f));         // Red
 	    
-	    // Z-axis: Positive part (Orange)
+	    // X-axis: Negative part (Orange)
 	    axisLines.setCoordinate(10, new Point3f(0.0f, 0.0f, 0.0f));   // Start at origin
 	    axisLines.setCoordinate(11, new Point3f(0.0f, 0.0f, 100.0f)); // End of positive Z
 	    axisLines.setColor(10, CommonsSK.Yellow);        // Orange
