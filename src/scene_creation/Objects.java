@@ -11,139 +11,142 @@ import org.jogamp.java3d.utils.image.TextureLoader;
 import org.jogamp.vecmath.*;
 
 
+
 public abstract class Objects {
-	protected BranchGroup objBG;                           // load external object to 'objBG'
-	protected TransformGroup objTG;                        // use 'objTG' to position an object
-	protected TransformGroup objRG;                        // use 'objRG' to rotate an object
-	protected double scale;                                // use 'scale' to define scaling
-	protected Vector3f post;                               // use 'post' to specify location
-	protected Shape3D obj_shape;
-	protected static String obj_name; //For FanBlades and Guard. Setting appearance for multiple parts of an object
-	protected String texture_name; //Filename for texture string
+    protected BranchGroup objBG;                           // load external object to 'objBG'
+    protected TransformGroup objTG;                        // use 'objTG' to position an object
+    protected TransformGroup objRG;                        // use 'objRG' to rotate an object
+    protected double scale;                                // use 'scale' to define scaling
+    protected Vector3f post;                               // use 'post' to specify location
+    protected Shape3D obj_shape;
+    protected static String obj_name; //For FanBlades and Guard. Setting appearance for multiple parts of an object
+    protected String texture_name; //Filename for texture string
 
-	protected float x,y,z;    //Dimension for square shape
+    protected float x,y,z;    //Dimension for square shape
 
-	public abstract TransformGroup position_Object();      // need to be defined in derived classes
-	public abstract void add_Child(TransformGroup nextTG);
+    public abstract TransformGroup position_Object();      // need to be defined in derived classes
+    public abstract void add_Child(TransformGroup nextTG);
 
-	// Added: Cache for loaded textures to avoid redundant loading
-	private static Map<String, Texture> textureCache = new HashMap<>();
+    // Added: Cache for loaded textures to avoid redundant loading
+    private static Map<String, Texture> textureCache = new HashMap<>();
 
-	/* a function to load and return object shape from the file named 'obj_name' */
-	protected static Scene loadShape(String obj_name) {  // Changed to static for shared access
-		ObjectFile f = new ObjectFile(ObjectFile.RESIZE, (float) (60 * Math.PI / 180.0));
-		Scene s = null;
-		try {                                              // load object's definition file to 's'
-			s = f.load(obj_name + ".obj");
-		} catch (FileNotFoundException e) {
-			System.err.println(e);
-			System.exit(1);
-		} catch (ParsingErrorException e) {
-			System.err.println(e);
-			System.exit(1);
-		} catch (IncorrectFormatException e) {
-			System.err.println(e);
-			System.exit(1);
-		}
-		return s;                                          // return the object shape in 's'
-	}
+    /* a function to load and return object shape from the file named 'obj_name' */
+    protected static Scene loadShape(String obj_name) {  // Changed to static for shared access
+        ObjectFile f = new ObjectFile(ObjectFile.RESIZE, (float) (60 * Math.PI / 180.0));
+        Scene s = null;
+        try {                                              // load object's definition file to 's'
+            s = f.load(obj_name + ".obj");
+        } catch (FileNotFoundException e) {
+            System.err.println(e);
+            System.exit(1);
+        } catch (ParsingErrorException e) {
+            System.err.println(e);
+            System.exit(1);
+        } catch (IncorrectFormatException e) {
+            System.err.println(e);
+            System.exit(1);
+        }
+        return s;                                          // return the object shape in 's'
+    }
 
-	/* function to set 'objTG' and attach object after loading the model from external file */
-	protected void transform_Object(String obj_name, float x) {
-		this.obj_name = obj_name;
-		Transform3D scaler = new Transform3D();
-		scaler.setScale(scale);                            // set scale for the 4x4 matrix
-		scaler.setTranslation(post);                       // set translations for the 4x4 matrix
-		objTG = new TransformGroup(scaler);                // set the translation BG with the 4x4 matrix
-		objBG = loadShape(obj_name).getSceneGroup();
-		Appearance app = obj_Appearance(x);                 // Create the appearance with texture
-		// load external object to 'objBG'
-		for (int i = 0; i < objBG.numChildren(); i++) {   //Make all the objects pickable
-			Node child = objBG.getChild(i);
-			if (child instanceof Shape3D) {
-				Shape3D shape = (Shape3D) child;
-				shape.setAppearance(app);                  // Apply the appearance to all the nodes
-				shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
-				shape.setPickable(true);
-			}
-		}
-		obj_shape = (Shape3D) objBG.getChild(0);           // get and cast the object to 'obj_shape'
-		obj_shape.setName(obj_name);                       // use the name to identify the object
-	}
+    /* function to set 'objTG' and attach object after loading the model from external file */
+    protected void transform_Object(String obj_name, float x) {
+        this.obj_name = obj_name;
+        Transform3D scaler = new Transform3D();
+        scaler.setScale(scale);                            // set scale for the 4x4 matrix
+        scaler.setTranslation(post);                       // set translations for the 4x4 matrix
+        objTG = new TransformGroup(scaler);                // set the translation BG with the 4x4 matrix
+        objBG = loadShape(obj_name).getSceneGroup();
+        Appearance app = obj_Appearance(x);                 // Create the appearance with texture
+        // load external object to 'objBG'
+        for (int i = 0; i < objBG.numChildren(); i++) {   //Make all the objects pickable
+            Node child = objBG.getChild(i);
+            if (child instanceof Shape3D) {
+                Shape3D shape = (Shape3D) child;
+                shape.setAppearance(app);                  // Apply the appearance to all the nodes
+                shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+                shape.setPickable(true);
+            }
+        }
+        obj_shape = (Shape3D) objBG.getChild(0);           // get and cast the object to 'obj_shape'
+        obj_shape.setName(obj_name);                       // use the name to identify the object
+    }
 
-	protected Appearance app = new Appearance();
-	private int shine = 32;                                // specify common values for object's appearance
-	protected Color3f[] mtl_clr = {new Color3f(1.000000f, 1.000000f, 1.000000f),
-			new Color3f(0.772500f, 0.654900f, 0.000000f),
-			new Color3f(0.175000f, 0.175000f, 0.175000f),
-			new Color3f(0.000000f, 0.000000f, 0.000000f)};
+    protected Appearance app = new Appearance();
+    private int shine = 32;                                // specify common values for object's appearance
+    protected Color3f[] mtl_clr = {new Color3f(1.000000f, 1.000000f, 1.000000f),
+            new Color3f(0.772500f, 0.654900f, 0.000000f),
+            new Color3f(0.175000f, 0.175000f, 0.175000f),
+            new Color3f(0.000000f, 0.000000f, 0.000000f)};
 
-	protected static Texture texture_App(String file_name) {
-		// Check cache first; return cached texture if available
-		if (textureCache.containsKey(file_name)) {
-			return textureCache.get(file_name);
-		}
-		TextureLoader loader = new TextureLoader(file_name, null);
-		ImageComponent2D image = loader.getImage();        // get the image
-		if (image == null)
-			System.out.println("Cannot load file: " + file_name);
+    protected static Texture texture_App(String file_name) {
+        // Check cache first; return cached texture if available
+        if (textureCache.containsKey(file_name)) {
+            return textureCache.get(file_name);
+        }
+        TextureLoader loader = new TextureLoader(file_name, null);
+        ImageComponent2D image = loader.getImage();        // get the image
+        if (image == null)
+            System.out.println("Cannot load file: " + file_name);
 
-		Texture2D texture = new Texture2D(Texture2D.BASE_LEVEL,
-				Texture2D.RGBA, image.getWidth(), image.getHeight());
-		texture.setImage(0, image);                        // define the texture with the image
-		textureCache.put(file_name, texture);              // Store in cache
-		return texture;
-	}
+        Texture2D texture = new Texture2D(Texture2D.BASE_LEVEL,
+                Texture2D.RGBA, image.getWidth(), image.getHeight());
+        texture.setImage(0, image);                        // define the texture with the image
+        textureCache.put(file_name, texture);              // Store in cache
+        return texture;
+    }
 
-	protected Appearance obj_Appearance(float x) {
-		Material mtl = new Material();                     // define material's attributes
-		mtl.setShininess(shine);
-		mtl.setAmbientColor(mtl_clr[0]);                   // use them to define different materials
-		mtl.setDiffuseColor(mtl_clr[1]);
-		mtl.setSpecularColor(mtl_clr[2]);
-		mtl.setEmissiveColor(mtl_clr[3]);                  // use it to enlighten a button
-		mtl.setLightingEnable(true);
+    protected Appearance obj_Appearance(float x) {
+        Material mtl = new Material();                     // define material's attributes
+        mtl.setShininess(shine);
+        // Dim the colors by multiplying by 0.3f for an ominous vibe
+        Color3f dimAmbient = new Color3f(mtl_clr[0].x * 0.3f, mtl_clr[0].y * 0.3f, mtl_clr[0].z * 0.3f);
+        Color3f dimDiffuse = new Color3f(mtl_clr[1].x * 0.3f, mtl_clr[1].y * 0.3f, mtl_clr[1].z * 0.3f);
+        Color3f dimSpecular = new Color3f(mtl_clr[2].x * 0.3f, mtl_clr[2].y * 0.3f, mtl_clr[2].z * 0.3f);
+        mtl.setAmbientColor(dimAmbient);                   // use them to define different materials
+        mtl.setDiffuseColor(dimDiffuse);
+        mtl.setSpecularColor(dimSpecular);
+        mtl.setEmissiveColor(mtl_clr[3]);                  // use it to enlighten a button
+        mtl.setLightingEnable(true);
 
-		app.setMaterial(mtl);                              // set appearance's material
+        app.setMaterial(mtl);                              // set appearance's material
 
-		//Set appearance's texture for the object
-		TexCoordGeneration tcg = new TexCoordGeneration(TexCoordGeneration.OBJECT_LINEAR,
-				TexCoordGeneration.TEXTURE_COORDINATE_2);
-		app.setTexCoordGeneration(tcg);
-		app.setTexture(texture_App(texture_name)); //add texture
+        //Set appearance's texture for the object
+        TexCoordGeneration tcg = new TexCoordGeneration(TexCoordGeneration.OBJECT_LINEAR,
+                TexCoordGeneration.TEXTURE_COORDINATE_2);
+        app.setTexCoordGeneration(tcg);
+        app.setTexture(texture_App(texture_name)); //add texture
 
-		TextureAttributes textureAttrib= new TextureAttributes();
-		textureAttrib.setTextureMode(TextureAttributes.REPLACE);
-		app.setTextureAttributes(textureAttrib);
+        TextureAttributes textureAttrib= new TextureAttributes();
+        textureAttrib.setTextureMode(TextureAttributes.REPLACE);
+        app.setTextureAttributes(textureAttrib);
 
-		float scl = x;                                  // need to rearrange the four quarters
-		// Prevent zero scaling, which causes issues
-	    
-		Vector3d scale = new Vector3d(scl, scl, scl);
-		Transform3D transMap = new Transform3D();
-		transMap.setScale(scale);
-		textureAttrib.setTextureTransform(transMap);
-		return app;
-	}
+        float scl = x;                                  // need to rearrange the four quarters
+        // Prevent zero scaling, which causes issues
+        Vector3d scale = new Vector3d(scl, scl, scl);
+        Transform3D transMap = new Transform3D();
+        transMap.setScale(scale);
+        textureAttrib.setTextureTransform(transMap);
+        return app;
+    }
 
-	// In your abstract class Objects, add the following method:
-	public BoundingSphere getCollisionBounds() {
-		// If your object has dimensions x, y, z (for example, as used in SquareShape),
-		// a rough bounding sphere radius can be computed as half the diagonal:
-		double radius = Math.sqrt(Math.pow(x / 2.0, 2) + Math.pow(y / 2.0, 2) + Math.pow(z / 2.0, 2));
+    // In your abstract class Objects, add the following method:
+    public BoundingSphere getCollisionBounds() {
+        // If your object has dimensions x, y, z (for example, as used in SquareShape),
+        // a rough bounding sphere radius can be computed as half the diagonal:
+        double radius = Math.sqrt(Math.pow(x / 2.0, 2) + Math.pow(y / 2.0, 2) + Math.pow(z / 2.0, 2));
 
-		// Use the 'post' vector as the center. Ensure post is initialized!
-		if (post == null) {
-			post = new Vector3f(0f, 0f, 0f);
-		}
-		Point3d center = new Point3d(post.x, post.y, post.z);
+        // Use the 'post' vector as the center. Ensure post is initialized!
+        if (post == null) {
+            post = new Vector3f(0f, 0f, 0f);
+        }
+        Point3d center = new Point3d(post.x, post.y, post.z);
 
-		return new BoundingSphere(center, radius);
-	}
+        return new BoundingSphere(center, radius);
+    }
 }
 
-//Classes for each 3D objects (Floor, Ceiling, etc.)
-
+// Rest of the classes (WallObject, PillarObject, etc.) 
 class WallObject extends Objects {
 	public WallObject(String texture_name) {                 //Filename for the object
 		super();
@@ -188,7 +191,7 @@ class CubicleObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 2d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0f, 0f, 0f);                // Define the location of the wall object
-		transform_Object("Cubicle",0f);                     // set transformation to 'objTG' and load object file
+		transform_Object("Cubicle",15f);                     // set transformation to 'objTG' and load object file
 	}
 
 	public TransformGroup position_Object() {
@@ -303,7 +306,7 @@ class HandleObject extends Objects {
 	public HandleObject(String texture_name, String filename) {                 //Filename for the object
 		super();
 		this.texture_name = texture_name;
-		scale = 0.8d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		scale = 0.4d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0f, 0f, 0f);                   // location to connect "FanSwitch" with "FanStand"
 		transform_Object(filename,0);                    // set transformation to 'objTG' and load object file
 		obj_Appearance(0);                                  // set appearance after converting object node to Shape3D

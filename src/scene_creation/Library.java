@@ -182,7 +182,7 @@ public class Library {
 
         object3D[0] = new SquareShape("CarpetTexture.png", 6f, 0.01f, 8f,10f); // Create "FloorObject"
         object3D[1] = new SquareShape("beige_image2.jpg", 6f, 4f, 0.05f,10f); // Create Front and Back wall dimensions
-        object3D[2] = new SquareShape("Other Library.JPG", 6f, 4f, 0.05f,1f); // Create Front and Back wall dimensions
+        object3D[2] = new SquareShape("Capture2.JPG", 6f, 4f, 0.05f,1f); // Create Front and Back wall dimensions
         object3D[3] = new WallObject("beige_image2.jpg"); // Create dimensions for open wall
         object3D[4] = new SquareShape("beige_image2.jpg", 0.05f, 4f, 14f,10f); // Create Left and right wall dimensions
         object3D[5] = new SquareShape("ImageFloor2.jpg", 6f, 0.01f, 15f,5f); // Create ceiling, same dimensions as floor
@@ -212,7 +212,7 @@ public class Library {
         yAxis.setTranslation(new Vector3f(0f, 0.15f, -1f));   //position of wall
 
         TransformGroup frontWallTG = define_wall(object3D[1].position_Object(), new Vector3f(0f, 4f, 13f)); //Where the bookshelfs are
-        TransformGroup backWallTG = define_wall(object3D[2].position_Object(), new Vector3f(0f, 4f, -6f));
+        TransformGroup backWallTG = define_wall(object3D[2].position_Object(), new Vector3f(0f, 4f, -8f));
         TransformGroup leftWallTG = define_wall(object3D[3].position_Object(), new Vector3f(-4f, 4f, 0f));
         leftWallTG.setTransform(yAxis);
         TransformGroup rightWallTG = define_wall(object3D[4].position_Object(), new Vector3f(6f, 4f, 0));
@@ -239,16 +239,19 @@ public class Library {
         // Offsets for door handles 
         // RIGHT
         Transform3D Offset3 = new Transform3D();             // To position the door handles properly
-        Offset3.setTranslation(new Vector3f(1f, 0.0f, 0f));
+        Offset3.setTranslation(new Vector3f(1f, 0.0f, 0.1f));
         
         // LEFT
         Transform3D Offset4 = new Transform3D();             // To position the door handles properly
-        Offset4.setTranslation(new Vector3f(2f, 0.0f, 0f));
+        Offset4.setTranslation(new Vector3f(1.7f, 0.0f, 0.15f));
         
         // Get handle TransformGroups once and reuse them
-        TransformGroup handleRightTG = object3D[9].position_Object();  // Get RIGHT handle TG once
-        handleRightTG.setTransform(Offset3);                          // Set offset for RIGHT door handle
-        TransformGroup handleLeftTG = object3D[10].position_Object(); // Get LEFT handle TG once
+        TransformGroup handleRightTG = new TransformGroup();
+        handleRightTG.setTransform(Offset3);
+        handleRightTG.addChild(object3D[9].position_Object());  // Get RIGHT handle TG once
+        
+        TransformGroup handleLeftTG = new TransformGroup();; // Get LEFT handle TG once
+        handleRightTG.addChild(object3D[10].position_Object());
         handleLeftTG.setTransform(Offset4);                           // Set offset for LEFT door handle
 
         object3D[3].add_Child(object3D[6].position_Object());    // Add one of the doors to the wall object
@@ -267,7 +270,7 @@ public class Library {
         Transform3D Offset6 = new Transform3D();             // Correction to position
         Offset6.setTranslation(new Vector3f(0f, 1f, 0f));
         
-        object3D[11] = new CubicleObject("ImageMetal2.jpg");    //Cubicle object
+        object3D[11] = new CubicleObject("chairtexture.png");    //Cubicle object
         TransformGroup CubicleTG = object3D[11].position_Object();
         CubicleTG.setTransform(Offset6);                        //Set the offset for the transform group of the cubicle
         
@@ -279,8 +282,8 @@ public class Library {
         object3D[0].add_Child(CubicleTG);
         
         // Adding door handles to DoorObject using the single TransformGroups
-        object3D[6].add_Child(handleRightTG);                    // Add RIGHT handle to door
-        object3D[6].add_Child(handleLeftTG);                     // Add LEFT handle to door
+//        object3D[6].add_Child(handleRightTG);                    // Add RIGHT handle to door
+//        object3D[6].add_Child(handleLeftTG);                     // Add LEFT handle to door
 
         
         libraryTG.addChild(object3D[0].position_Object());
