@@ -180,15 +180,15 @@ public class Library {
         cds.setSchedulingBounds(new BoundingSphere(new Point3d(0, 0, 0), 100));
         characterTG.addChild(cds);
 
-        object3D[0] = new SquareShape("CarpetTexture.jpeg", 4f, 0.01f, 8f); // Create "FloorObject"
-        object3D[1] = new SquareShape("beige_image.jpg", 4f, 4f, 0.05f); // Create Front and Back wall dimensions
-        object3D[2] = new SquareShape("beige_image.jpg", 4f, 4f, 0.05f); // Create Front and Back wall dimensions
-        object3D[3] = new WallObject("beige_image.jpg"); // Create dimensions for open wall
-        object3D[4] = new SquareShape("beige_image.jpg", 0.05f, 4f, 14f); // Create Left and right wall dimensions
-        object3D[5] = new SquareShape("ImageFloor2.jpg", 4f, 0.01f, 15f); // Create ceiling, same dimensions as floor
+        object3D[0] = new SquareShape("CarpetTexture.png", 6f, 0.01f, 8f,10f); // Create "FloorObject"
+        object3D[1] = new SquareShape("beige_image2.jpg", 6f, 4f, 0.05f,10f); // Create Front and Back wall dimensions
+        object3D[2] = new SquareShape("Other Library.JPG", 6f, 4f, 0.05f,1f); // Create Front and Back wall dimensions
+        object3D[3] = new WallObject("beige_image2.jpg"); // Create dimensions for open wall
+        object3D[4] = new SquareShape("beige_image2.jpg", 0.05f, 4f, 14f,10f); // Create Left and right wall dimensions
+        object3D[5] = new SquareShape("ImageFloor2.jpg", 6f, 0.01f, 15f,5f); // Create ceiling, same dimensions as floor
         object3D[6] = new DoorObject("DoorTexture.jfif"); // Create the first door object
         object3D[7] = new DoorObject("DoorTexture.jfif"); // Create the second door object
-        object3D[8] = new SquareShape("FloorTexture.jpeg", 4f, 0.01f, 7f);     //Second floor
+        object3D[8] = new SquareShape("browntiledtexture.png", 6f, 0.01f, 7f,5f);     //Second floor
         object3D[9] = new HandleObject("ImageMetal2.jpg", "DoorHandleRight" );    //Handle Object (Right)
         object3D[10] = new HandleObject("ImageMetal2.jpg", "DoorHandleLeft");    //Handle Object (Left)
 
@@ -215,23 +215,23 @@ public class Library {
         TransformGroup backWallTG = define_wall(object3D[2].position_Object(), new Vector3f(0f, 4f, -6f));
         TransformGroup leftWallTG = define_wall(object3D[3].position_Object(), new Vector3f(-4f, 4f, 0f));
         leftWallTG.setTransform(yAxis);
-        TransformGroup rightWallTG = define_wall(object3D[4].position_Object(), new Vector3f(4f, 4f, 0));
+        TransformGroup rightWallTG = define_wall(object3D[4].position_Object(), new Vector3f(6f, 4f, 0));
         TransformGroup ceilingTG = define_wall(object3D[5].position_Object(), new Vector3f(0f, 4.15f, 0));
         
-        TransformGroup WoodFloorTG = define_wall(object3D[8].position_Object(), new Vector3f(0f, 0f, 10.2f)); //Wood floor for the shelves
+        TransformGroup WoodFloorTG = define_wall(object3D[8].position_Object(), new Vector3f(0f, 0.001f, 10.2f)); //Wood floor for the shelves
         
         // Numbered shelves: 1-5 and 6-10
-        TransformGroup shelvesTG1 = createShelves(5, 2f, "BookshelfTexture.jpeg", 1);
-        TransformGroup shelvesTG2 = createShelves(5, 2f, "BookshelfTexture.jpeg", 6);
+        TransformGroup shelvesTG1 = createShelves(5, 2f, "BookshelfTexture.jpg", 1);
+        TransformGroup shelvesTG2 = createShelves(5, 2f, "BookshelfTexture.jpg", 6);
         
         //Offsets for shelves
 
         Transform3D Offset = new Transform3D();
-        Offset.setTranslation(new Vector3f(5f, 0.0f, 7f)); // Changed from (0f, 0f, 5f) to (5f, 0f, 0f)
+        Offset.setTranslation(new Vector3f(4.5f, 0.0f, 7f)); // Changed from (0f, 0f, 5f) to (5f, 0f, 0f)
         shelvesTG2.setTransform(Offset);
         
         Transform3D Offset2 = new Transform3D();             //To move shelves to wood floor
-        Offset2.setTranslation(new Vector3f(0f, 0.0f, 7f));
+        Offset2.setTranslation(new Vector3f(0.5f, 0.0f, 7f));
         shelvesTG1.setTransform(Offset2);   //Translate the position
         
         //Scene Graph
@@ -258,7 +258,7 @@ public class Library {
         // LEFT Wall offset
         Transform3D Offset5 = new Transform3D();             // Correction to position
         Offset5.setTranslation(new Vector3f(-4f, 0.0f, 10f));
-        object3D[12] = new SquareShape("beige_image.jpg", 0.05f, 4f, 9f); // Create Left and right wall dimensions
+        object3D[12] = new SquareShape("beige_image2.jpg", 0.05f, 4f, 9f,10f); // Create Left and right wall dimensions
         
         TransformGroup ExtraWallTG = object3D[12].position_Object();
         ExtraWallTG.setTransform(Offset5);

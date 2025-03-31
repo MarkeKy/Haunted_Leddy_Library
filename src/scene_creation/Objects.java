@@ -49,7 +49,7 @@ public abstract class Objects {
 	}
 
 	/* function to set 'objTG' and attach object after loading the model from external file */
-	protected void transform_Object(String obj_name, int x) {
+	protected void transform_Object(String obj_name, float x) {
 		this.obj_name = obj_name;
 		Transform3D scaler = new Transform3D();
 		scaler.setScale(scale);                            // set scale for the 4x4 matrix
@@ -95,7 +95,7 @@ public abstract class Objects {
 		return texture;
 	}
 
-	protected Appearance obj_Appearance(int x) {
+	protected Appearance obj_Appearance(float x) {
 		Material mtl = new Material();                     // define material's attributes
 		mtl.setShininess(shine);
 		mtl.setAmbientColor(mtl_clr[0]);                   // use them to define different materials
@@ -117,6 +117,8 @@ public abstract class Objects {
 		app.setTextureAttributes(textureAttrib);
 
 		float scl = x;                                  // need to rearrange the four quarters
+		// Prevent zero scaling, which causes issues
+	    
 		Vector3d scale = new Vector3d(scl, scl, scl);
 		Transform3D transMap = new Transform3D();
 		transMap.setScale(scale);
@@ -148,7 +150,7 @@ class WallObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0.05f, 1.5f, -4f);                // Define the location of the wall object
-		transform_Object("DoorOpeningWall",0);                     // set transformation to 'objTG' and load object file
+		transform_Object("DoorOpeningWall",10f);                     // set transformation to 'objTG' and load object file
 	}
 
 	public TransformGroup position_Object() {
@@ -167,7 +169,7 @@ class PillarObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0.05f, 1.5f, -4f);                // Define the location of the wall object
-		transform_Object("DoorOpeningWall",4);                     // set transformation to 'objTG' and load object file
+		transform_Object("DoorOpeningWall",0.1f);                     // set transformation to 'objTG' and load object file
 	}
 
 	public TransformGroup position_Object() {
@@ -186,7 +188,7 @@ class CubicleObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 2d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0f, 0f, 0f);                // Define the location of the wall object
-		transform_Object("Cubicle",0);                     // set transformation to 'objTG' and load object file
+		transform_Object("Cubicle",0f);                     // set transformation to 'objTG' and load object file
 	}
 
 	public TransformGroup position_Object() {
@@ -219,7 +221,7 @@ class ShelfObject extends Objects {
 		obj_shape.setName("EmptySelf");
 		obj_shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
 		obj_shape.setPickable(true);
-		Appearance app = obj_Appearance(1);                  // set appearance after converting object node to Shape3D
+		Appearance app = obj_Appearance(1f);                  // set appearance after converting object node to Shape3D
 		obj_shape.setAppearance(app);
 	}
 
@@ -244,7 +246,7 @@ class LightObject extends Objects {
 	public LightObject(String texture_name) {                 //Filename for the object
 		super();
 		this.texture_name = texture_name;
-		scale = 2d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		scale = 1.5d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0f, 1.01f, 0f);                // location to connect "FanSwitch" with "FanStand"
 		// Load geometry only once
 		if (shelfGeometry == null) {
@@ -257,7 +259,7 @@ class LightObject extends Objects {
 		obj_shape.setName("LightingPanel");
 		obj_shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
 		obj_shape.setPickable(true);
-		Appearance app = obj_Appearance(4);                  // set appearance after converting object node to Shape3D
+		Appearance app = obj_Appearance(0.1f);                  // set appearance after converting object node to Shape3D
 		obj_shape.setAppearance(app);
 	}
 
@@ -283,7 +285,7 @@ class DoorObject extends Objects {
 		scale = 0.4d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(-0.17f, -0.03f, 0f);                // location to connect "FanSwitch" with "FanStand"
 		transform_Object("doorleft",0);                     // set transformation to 'objTG' and load object file
-	//	obj_Appearance();                                  // set appearance after converting object node to Shape3D
+		obj_Appearance(0);                                  // set appearance after converting object node to Shape3D
 	}
 
 	public TransformGroup position_Object() {
@@ -304,7 +306,7 @@ class HandleObject extends Objects {
 		scale = 0.8d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0f, 0f, 0f);                   // location to connect "FanSwitch" with "FanStand"
 		transform_Object(filename,0);                    // set transformation to 'objTG' and load object file
-	//	obj_Appearance();                                  // set appearance after converting object node to Shape3D
+		obj_Appearance(0);                                  // set appearance after converting object node to Shape3D
 	}
 
 	public TransformGroup position_Object() {
@@ -417,33 +419,53 @@ class SinglebookObject extends Objects {
 	}
 }
 
+
 class SquareShape extends Objects {
-	public SquareShape(String texture_name, float x, float y, float z) { //Define the texture file and the dimensions for the box
-		this.x = x; this.y = y; this.z = z;                           //Initialize the values
-		this.texture_name = texture_name;
-		Transform3D translator = new Transform3D();
-		translator.setTranslation(new Vector3d(0.0, -0.54, 0));
-		objTG = new TransformGroup(translator);            // down half of the tower and base's heights
+    private float x, y, z;            // Half-widths of the box
+    private String texture_name;      // Texture file name
+    private float textureScale;       // New parameter to control texture scaling
+    private TransformGroup objTG;     // Transform group for positioning
+    protected Appearance app;         // Appearance object
 
-		objTG.addChild(create_Object());                   // attach the object to 'objTG'
-	}
+    public SquareShape(String texture_name, float x, float y, float z, float textureScale) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.texture_name = texture_name;
+        this.textureScale = textureScale;  // Set the texture scale
+        Transform3D translator = new Transform3D();
+        translator.setTranslation(new Vector3d(0.0, -0.54, 0));  // Default positioning
+        objTG = new TransformGroup(translator);
+        objTG.addChild(create_Object());
+    }
 
-	public TransformGroup position_Object() {
-		objTG.addChild(objBG);                             // attach "FanSwitch" to 'objTG'
-		return objTG;                                      // use 'objTG' to attach "FanSwitch" to the previous TG
-	}
+    protected Node create_Object() {
+        // Set up the appearance with a base color
+        app = CommonsSK.set_Appearance(CommonsSK.White);
+        app.setTexture(Objects.texture_App(texture_name));  // Apply the texture
 
+        // Disable back-face culling
+        PolygonAttributes pa = new PolygonAttributes();
+        pa.setCullFace(PolygonAttributes.CULL_NONE);
+        app.setPolygonAttributes(pa);
 
-	protected Node create_Object() {
-		app = CommonsSK.set_Appearance(CommonsSK.White);   // set the appearance for the base
-		app.setTexture(Objects.texture_App(texture_name));
-		PolygonAttributes pa = new PolygonAttributes();
-		pa.setCullFace(PolygonAttributes.CULL_NONE);       // show both sides
-		app.setPolygonAttributes(pa);
-		return new Box(x, y, z, Primitive.GENERATE_NORMALS | Primitive.GENERATE_TEXTURE_COORDS, app);  // Primitive.GENERATE_TEXTURE_COORDS Allows for texture mapping for the texture coordinates
-	}
+        // Add texture attributes with a scaling transform
+        TextureAttributes texAttr = new TextureAttributes();
+        texAttr.setTextureMode(TextureAttributes.REPLACE);  // Replace base color with texture
+        Transform3D texTransform = new Transform3D();
+        texTransform.setScale(new Vector3d(textureScale, textureScale, textureScale));
+        texAttr.setTextureTransform(texTransform);
+        app.setTextureAttributes(texAttr);
 
-	public void add_Child(TransformGroup nextTG) {
-		objTG.addChild(nextTG);                            // attach the next transformGroup to 'objTG'
-	}
+        // Create and return the Box with texture coordinates
+        return new Box(x, y, z, Primitive.GENERATE_NORMALS | Primitive.GENERATE_TEXTURE_COORDS, app);
+    }
+
+    public TransformGroup position_Object() {
+        return objTG;  // Return the transform group for positioning
+    }
+
+    public void add_Child(TransformGroup nextTG) {
+        objTG.addChild(nextTG);  // Attach additional transform groups
+    }
 }
