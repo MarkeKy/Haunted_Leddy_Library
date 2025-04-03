@@ -75,7 +75,7 @@ public abstract class Objects {
 
 	protected Appearance app = new Appearance();
 	private int shine = 32;                                // specify common values for object's appearance
-	protected Color3f[] mtl_clr = {new Color3f(0.000008f, 0.000008f, 0.000008f),
+	protected Color3f[] mtl_clr = {new Color3f(0.000005f, 0.000005f, 0.000005f),
 			new Color3f(0.772500f, 0.654900f, 0.000000f),
 			new Color3f(0.175000f, 0.175000f, 0.175000f),
 			new Color3f(0.000000f, 0.000000f, 0.000000f)};
@@ -293,7 +293,7 @@ class LightObject extends Objects {
 		scale = 0.5d; // Increased scale for debugging (was 0.1)
 
 		// Create a PointLight to illuminate the entire library
-		Color3f lightColor = new Color3f(0.5f, 0.5f, 0.5f); // White light
+		Color3f lightColor = new Color3f(0.8f, 0.8f, 0.8f); // White light
 		float baseIntensity = 0.3f; // Base intensity
 		light = new PointLight();
 		light.setColor(lightColor);
@@ -600,7 +600,7 @@ class SquareShape extends Objects {
 			mtl.setAmbientColor(new Color3f(0.2f, 0.2f, 0.2f));
 			mtl.setDiffuseColor(new Color3f(0.9f, 0.9f, 0.9f));
 			mtl.setSpecularColor(new Color3f(0.8f, 0.8f, 0.8f));
-			mtl.setShininess(30.0f);
+			mtl.setShininess(45.0f);
 			mtl.setLightingEnable(true);
 			app.setMaterial(mtl);
 		}

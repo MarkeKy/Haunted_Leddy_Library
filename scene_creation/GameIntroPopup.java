@@ -34,10 +34,13 @@ public class GameIntroPopup extends JDialog {
         contentPanel.setBackground(new Color(240, 240, 240));
 
         // Game description.
-        JLabel descriptionLabel = new JLabel("<html><b>Game Description:</b><br>" +
-                "Welcome to the Haunted Leddy Library! You have 5 minutes to solve all the book-ordering puzzles on the shelves. <br>" +
-                "Click on a book to start a puzzle, where you must arrange the books in the correct order (Red, Yellow, Blue, repeating).<br> " +
-                "Solve all 8 puzzles to win and escape the library before the ghost appears! <br>If time runs out, the ghost will haunt you, and the game will end.</html>");
+        JLabel descriptionLabel = new JLabel("<html>" +
+                "<b>Game Description:</b><br>" +
+                "Welcome to the Haunted Leddy Library! You have 5 minutes to solve all 8 book-ordering puzzles on the shelves.<br>" +
+                "Click a book to begin a puzzle and arrange the books in the correct order.<br>" +
+                "A mysterious gas sphere blocks the door until you complete all puzzles. Solve them all to make it disappear and escape!<br>" +
+                "If time runs out before you finish, the ghost will appear, ending your game.<br>" +
+                "</html>");
         descriptionLabel.setFont(new Font("Serif", Font.PLAIN, 14));
         descriptionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         contentPanel.add(descriptionLabel);

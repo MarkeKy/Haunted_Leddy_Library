@@ -13,6 +13,7 @@ import org.jogamp.java3d.utils.picking.PickTool;
 import org.jogamp.java3d.utils.universe.SimpleUniverse;
 import org.jogamp.vecmath.*;
 
+// MainClass manages the game window, scene rendering, input handling, and core game logic.
 public class MainClass extends JPanel implements KeyListener, MouseListener, MouseMotionListener {
 	private static final long serialVersionUID = 1L;
 	private static JFrame frame;
@@ -22,7 +23,7 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	private CustomCanvas3D canvas;
 	private BranchGroup sceneBG;
 	private PickTool pickTool;
-	protected static Map<String, Boolean> bookshelfUsage = new HashMap<>();
+	protected static Map<String, Boolean> bookshelfUsage = new HashMap<>(); // Tracks solved bookshelves.
 	private boolean bookGameActive = false;
 	private static int points = 0;
 	private JLabel pointsLabel;
@@ -35,9 +36,8 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	private GhostObject ghostObject;
 	private Library library;
 
-	// New variables for book swapping
-	private boolean swapModeActive = false; // Flag to indicate swap mode is active
-	private TransformGroup firstSelectedBook = null; // First book selected for swapping
+	private boolean swapModeActive = false;
+	private TransformGroup firstSelectedBook = null;
 
 	private static class CustomCanvas3D extends Canvas3D {
 		public CustomCanvas3D(GraphicsConfiguration config) {
@@ -54,8 +54,8 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	public BranchGroup create_Scene() {
 		BranchGroup sceneBG = new BranchGroup();
 		TransformGroup sceneTG = new TransformGroup();
-		Library library = new Library();
-		sceneTG.addChild(library.create_Library());
+		library = new Library();
+		sceneTG.addChild(library.create_Library(bookshelfUsage)); // Pass bookshelfUsage to Library.
 		for (Objects obj : library.getObjects()) {
 			if (obj instanceof GhostObject) {
 				ghostObject = (GhostObject) obj;
@@ -102,22 +102,9 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		viewTG = universe.getViewingPlatform().getViewPlatformTransform();
 		movement = new Movement(viewTG);
 
-		if (Library.characterTG == null) {
-			Library.characterTG = new TransformGroup();
-		}
-		Library.characterTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-
 		sceneBG = create_Scene();
 		pickTool = new PickTool(sceneBG);
 		pickTool.setMode(PickTool.GEOMETRY);
-
-		if (Library.characterTG.numChildren() > 0) {
-			Sphere characterSphere = (Sphere) Library.characterTG.getChild(0);
-			Shape3D characterShape = (Shape3D) characterSphere.getChild(0);
-			CollisionDetectCharacter collisionBehavior = new CollisionDetectCharacter(characterShape);
-			collisionBehavior.setSchedulingBounds(new BoundingSphere(new Point3d(0, 0, 0), 100));
-			Library.characterTG.addChild(collisionBehavior);
-		}
 
 		Transform3D initialView = new Transform3D();
 		initialView.setTranslation(new Vector3f(0f, 1f, 20f));
@@ -196,8 +183,8 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		bookshelfUsage.clear();
 		timeRemaining = 300;
 		gameOver = false;
-		swapModeActive = false; // Reset swap mode
-		firstSelectedBook = null; // Clear first selected book
+		swapModeActive = false;
+		firstSelectedBook = null;
 
 		Transform3D initialView = new Transform3D();
 		initialView.setTranslation(new Vector3f(0f, 2f, 0f));
@@ -292,14 +279,13 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 
 					if ("book".equals(userData)) {
 						if (swapModeActive) {
-							// Second book selected
 							if (tg == firstSelectedBook) {
 								JOptionPane.showMessageDialog(this, "Please select a different book to swap with!");
 								return;
 							}
 							BookGame bookGame = new BookGame();
 							bookGame.swapPositions(firstSelectedBook, tg);
-							soundManager.playSound("swap.wav", false); // Optional: Add sound effect
+							soundManager.playSound("swap.wav", false);
 							System.out.println("Swapped books!");
 							swapModeActive = false;
 							firstSelectedBook = null;
@@ -345,12 +331,12 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 								options[1]
 						);
 
-						if (choice == 0) { // "Swap Book" selected
+						if (choice == 0) {
 							swapModeActive = true;
 							firstSelectedBook = tg;
 							JOptionPane.showMessageDialog(this, "First book selected. Now click another book to swap with.");
 							return;
-						} else if (choice == 1) { // "Solve Puzzle" selected
+						} else if (choice == 1) {
 							startBookOrderingGame(shelfNumber, shelfId);
 						}
 						return;
@@ -454,14 +440,9 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		introPopup.showPopup();
 	}
 
-	@Override
-	public void keyTyped(KeyEvent e) {}
-	@Override
-	public void mousePressed(MouseEvent e) {}
-	@Override
-	public void mouseReleased(MouseEvent e) {}
-	@Override
-	public void mouseEntered(MouseEvent e) {}
-	@Override
-	public void mouseExited(MouseEvent e) {}
+	@Override public void keyTyped(KeyEvent e) {}
+	@Override public void mousePressed(MouseEvent e) {}
+	@Override public void mouseReleased(MouseEvent e) {}
+	@Override public void mouseEntered(MouseEvent e) {}
+	@Override public void mouseExited(MouseEvent e) {}
 }
