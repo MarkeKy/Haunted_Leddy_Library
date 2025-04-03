@@ -73,7 +73,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	public MainClass() {
 		soundManager = new SoundManager(); // Initialize the sound manager.
 
-		// Set up the 3D canvas for rendering.
 		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
 		canvas = new CustomCanvas3D(config);
 		canvas.setFocusable(true); // Ensure the canvas can receive input events.
@@ -81,7 +80,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		canvas.addMouseListener(this); // Add mouse listener for clicking.
 		canvas.addMouseMotionListener(this); // Add mouse motion listener for camera movement.
 
-		// Set the layout of the panel and add the canvas.
 		setLayout(new BorderLayout());
 		add(canvas, BorderLayout.CENTER);
 
@@ -108,7 +106,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		// Add the top panel to the main panel.
 		add(topPanel, BorderLayout.NORTH);
 
-		// Set up the 3D universe and viewing platform.
 		SimpleUniverse universe = new SimpleUniverse(canvas);
 		viewTG = universe.getViewingPlatform().getViewPlatformTransform();
 		movement = new Movement(viewTG); // Initialize the movement handler.
@@ -441,15 +438,31 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	public static void main(String[] args) {
 		SoundManager soundManager = new SoundManager();
 		soundManager.playSound("Horror.wav", true); // Play background music.
-		SwingUtilities.invokeLater(() -> {
-			frame = new JFrame("Haunted Leddy"); // Create the main window.
-			MainClass mainPanel = new MainClass(); // Create the main game panel.
-			frame.getContentPane().add(mainPanel);
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			frame.setSize(800, 800);
-			frame.setVisible(true);
-			mainPanel.canvas.requestFocusInWindow(); // Focus the canvas for input.
+
+		// Create a temporary frame to act as the parent for the popup.
+		JFrame tempFrame = new JFrame();
+		tempFrame.setUndecorated(true); // Make the frame invisible.
+		tempFrame.setSize(0, 0);
+		tempFrame.setLocationRelativeTo(null);
+		tempFrame.setVisible(true);
+
+		// Create and show the game introduction popup.
+		GameIntroPopup introPopup = new GameIntroPopup(tempFrame, () -> {
+			SwingUtilities.invokeLater(() -> {
+				// Dispose of the temporary frame.
+				tempFrame.dispose();
+
+				// Create the main game window after the popup is closed.
+				frame = new JFrame("Haunted Leddy");
+				MainClass mainPanel = new MainClass();
+				frame.getContentPane().add(mainPanel);
+				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				frame.setSize(800, 800);
+				frame.setVisible(true);
+				mainPanel.canvas.requestFocusInWindow();
+			});
 		});
+		introPopup.showPopup();
 	}
 
 	// Empty implementations for unused MouseListener and KeyListener methods.
