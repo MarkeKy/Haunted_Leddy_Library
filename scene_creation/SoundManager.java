@@ -12,7 +12,7 @@ public class SoundManager {
     public void playSound(String soundFileName, boolean loop) {
         try {
             // Load the sound file from the resources
-            URL soundURL = SoundManager.class.getResource(soundFileName);
+            URL soundURL = SoundManager.class.getResource("Sound/"+soundFileName);
             if (soundURL == null) {
                 System.err.println(soundFileName + " not found!");
                 return;

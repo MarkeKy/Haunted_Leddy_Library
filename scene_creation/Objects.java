@@ -36,7 +36,7 @@ public abstract class Objects {
 		ObjectFile f = new ObjectFile(ObjectFile.RESIZE, (float) (60 * Math.PI / 180.0));
 		Scene s = null;
 		try {                                              // load object's definition file to 's'
-			s = f.load(obj_name + ".obj");
+			s = f.load("Objects/"+obj_name + ".obj");
 		} catch (FileNotFoundException e) {
 			System.err.println(e);
 			System.exit(1);
@@ -85,7 +85,7 @@ public abstract class Objects {
 		if (textureCache.containsKey(file_name)) {
 			return textureCache.get(file_name);
 		}
-		TextureLoader loader = new TextureLoader(file_name, null);
+		TextureLoader loader = new TextureLoader("Textures/"+file_name, null);
 		ImageComponent2D image = loader.getImage();        // get the image
 		if (image == null)
 			System.out.println("Cannot load file: " + file_name);
@@ -152,9 +152,9 @@ class WallObject extends Objects {
 	public WallObject(String texture_name) {                 // Filename for the object
 		super();
 		this.texture_name = texture_name;
-		scale = 4d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(0.1f, 0.7f, -4.09f);        // Define the location of the wall object
-		transform_Object("DoorOpeningWall", 11f);        // set transformation to 'objTG' and load object file
+		transform_Object("DoorOpeningWall", 12f);        // set transformation to 'objTG' and load object file
 	}
 
 	public TransformGroup position_Object() {
@@ -172,7 +172,7 @@ class PillarObject extends Objects {
 		super();
 		this.texture_name = texture_name;
 		scale = 5d;                                      // actual scale is 0.3 = 1.0 x 0.3
-		post = new Vector3f(0.5f, 1.2f, -4f);           // Define the location of the wall object
+		post = new Vector3f(-0.17f, -0.03f, 1f);           // Define the location of the wall object
 		transform_Object("DoorOpeningWall", 0.1f);       // set transformation to 'objTG' and load object file
 	}
 
@@ -242,6 +242,44 @@ class ShelfObject extends Objects {
 		objTG.addChild(nextTG);                          // attach the next transformGroup to 'objTG'
 	}
 }
+class FullShelfObject extends Objects {
+	// Added: Shared geometry for all ShelfObject instances
+	private static Geometry shelfGeometry;
+
+	public FullShelfObject(String texture_name) {                // Filename for the object
+		super();
+		this.texture_name = texture_name;
+		scale = 2d;                                      // actual scale is 0.3 = 1.0 x 0.3
+		post = new Vector3f(0,0,0);          // location to connect "FanSwitch" with "FanStand"
+		// Load geometry only once
+		if (shelfGeometry == null) {
+			Scene s = loadShape("Fullself");
+			BranchGroup bg = s.getSceneGroup();
+			Shape3D shape = (Shape3D) bg.getChild(0);
+			shelfGeometry = shape.getGeometry();
+		}
+		obj_shape = new Shape3D(shelfGeometry);          // Use shared geometry
+		obj_shape.setName("Fullself");
+		obj_shape.setCapability(Shape3D.ENABLE_PICK_REPORTING);
+		obj_shape.setPickable(true);
+		Appearance app = obj_Appearance(1f);              // set appearance after converting object node to Shape3D
+		obj_shape.setAppearance(app);
+	}
+
+	public TransformGroup position_Object() {
+		Transform3D scaler = new Transform3D();
+		scaler.setScale(scale);
+		scaler.setTranslation(post);
+		objTG = new TransformGroup(scaler);
+		objTG.addChild(obj_shape);                       // Changed from objBG to obj_shape
+		return objTG;                                    // use 'objTG' to attach "FanSwitch" to the previous TG
+	}
+
+	public void add_Child(TransformGroup nextTG) {
+		objTG.addChild(nextTG);                          // attach the next transformGroup to 'objTG'
+	}
+}
+
 
 
 
@@ -263,13 +301,13 @@ class LightObject extends Objects {
 		light.setInfluencingBounds(new BoundingSphere(new Point3d(0, 0, 0), 100.0)); // Large bounds to cover the library
 
 		// Load the LightingPanel.obj model with debug output
-		System.out.println("Loading LightingPanel.obj...");
+		//System.out.println("Loading LightingPanel.obj...");
 		BranchGroup lightModelBG = null;
 		try {
 			lightModelBG = loadShape("LightingPanel").getSceneGroup();
-			System.out.println("LightingPanel.obj loaded successfully.");
+			//System.out.println("LightingPanel.obj loaded successfully.");
 		} catch (Exception e) {
-			System.out.println("Failed to load LightingPanel.obj: " + e.getMessage());
+			//System.out.println("Failed to load LightingPanel.obj: " + e.getMessage());
 			e.printStackTrace();
 			// Fallback: Create a sphere to ensure something is visible
 			lightModelBG = new BranchGroup();
@@ -342,11 +380,11 @@ class FlickerBehavior extends Behavior {
 	private PointLight light;
 	private float baseIntensity;
 	private Appearance lightAppearance; // To modify the model's emissive color
-	private WakeupOnElapsedFrames wakeup = new WakeupOnElapsedFrames(5); // Slower flicker (every 5 frames)
+	private WakeupOnElapsedFrames wakeup = new WakeupOnElapsedFrames(15); // Slower flicker (every 5 frames)
 	private Random random = new Random();
 	private SoundManager soundManager;
 	private long lastSoundTime = 0;
-	private static final long SOUND_COOLDOWN = 500; // 500 ms cooldown between sound plays
+	private static final long SOUND_COOLDOWN = 5000; // 500 ms cooldown between sound plays
 
 	public FlickerBehavior(PointLight light, float baseIntensity, Appearance lightAppearance) {
 		this.light = light;
@@ -392,7 +430,7 @@ class DoorObject extends Objects {
 		this.texture_name = texture_name;
 		scale = 0.4d;                                    // actual scale is 0.3 = 1.0 x 0.3
 		post = new Vector3f(-0.17f, -0.03f, 0f);        // location to connect "FanSwitch" with "FanStand"
-		transform_Object("doorleft", 0);                 // set transformation to 'objTG' and load object file
+		transform_Object("doorleft", 0f);                 // set transformation to 'objTG' and load object file
 		obj_Appearance(0);                               // set appearance after converting object node to Shape3D
 	}
 
@@ -425,6 +463,8 @@ class HandleObject extends Objects {
 		objTG.addChild(nextTG);                          // attach the next transformGroup to 'objTG'
 	}
 }
+
+
 
 class GroupbooksObject extends Objects {
 	// Added: Shared geometry for all GroupbooksObject instances
@@ -551,16 +591,16 @@ class SquareShape extends Objects {
 			app.setTexture(Objects.texture_App("beige_image2.jpg"));
 			// Debug: Set emissive color to make ceiling visible regardless of lighting
 			Material mtl = new Material();
-			mtl.setEmissiveColor(new Color3f(0.5f, 0.5f, 0.5f)); // Bright gray, visible without light
+			mtl.setEmissiveColor(new Color3f(0.2f, 0.2f, 0.2f)); // Bright gray, visible without light
 			mtl.setLightingEnable(false); // Ignore lighting for debugging
 			app.setMaterial(mtl);
 		} else {
 			app.setTexture(Objects.texture_App(texture_name));
 			Material mtl = new Material();
-			mtl.setAmbientColor(new Color3f(0.5f, 0.5f, 0.5f));
+			mtl.setAmbientColor(new Color3f(0.2f, 0.2f, 0.2f));
 			mtl.setDiffuseColor(new Color3f(0.9f, 0.9f, 0.9f));
-			mtl.setSpecularColor(new Color3f(1.0f, 1.0f, 1.0f));
-			mtl.setShininess(32.0f);
+			mtl.setSpecularColor(new Color3f(0.8f, 0.8f, 0.8f));
+			mtl.setShininess(30.0f);
 			mtl.setLightingEnable(true);
 			app.setMaterial(mtl);
 		}
@@ -778,6 +818,7 @@ class SceneBehavior extends Behavior {
 		wakeupOn(wakeup);
 	}
 }
+
 
 
 class SwapBehavior extends Behavior {
