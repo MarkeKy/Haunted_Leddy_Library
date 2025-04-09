@@ -16,23 +16,23 @@ public class CollisionDetectCharacter extends Behavior{
     // Removed Library and Movement instance variables to use Library's static fields directly.
     // protected static boolean colliding remains unchanged.
     protected static boolean colliding = false;                  //Flag to stop movement if collision has occurred
-
+    
     public CollisionDetectCharacter(Shape3D s) {
         shape = s;
     }
-
+    
     @Override
     public void initialize() {
         wEnter = new WakeupOnCollisionEntry(shape, WakeupOnCollisionEntry.USE_GEOMETRY);
         wExit  = new WakeupOnCollisionExit(shape, WakeupOnCollisionExit.USE_GEOMETRY);
         wakeupOn(new WakeupOr(new WakeupCriterion[] { wEnter, wExit }));
     }
-
+    
     @Override
     public void processStimulus(Iterator<WakeupCriterion> criteria) {
         boolean collisionEntry = false;
         boolean collisionExit  = false;
-
+        
         while (criteria.hasNext()) {
             WakeupCriterion wc = criteria.next();
             if (wc instanceof WakeupOnCollisionEntry)
@@ -40,7 +40,7 @@ public class CollisionDetectCharacter extends Behavior{
             if (wc instanceof WakeupOnCollisionExit)
                 collisionExit = true;
         }
-
+        
         if (collisionEntry) {
             colliding = true;  // lock movement
             // Revert to last safe position.
@@ -54,7 +54,7 @@ public class CollisionDetectCharacter extends Behavior{
             Library.lastSafePosition.set(Library.position); // ADDED: Use Library static fields
             System.out.println("Collision resolved: updating safe position to: " + Library.position);
         }
-
+        
         wakeupOn(new WakeupOr(new WakeupCriterion[] { wEnter, wExit }));
     }
 }
