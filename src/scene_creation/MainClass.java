@@ -13,6 +13,7 @@ import org.jogamp.java3d.utils.picking.PickTool;
 import org.jogamp.java3d.utils.universe.SimpleUniverse;
 import org.jogamp.vecmath.*;
 
+// MainClass manages the game window, scene rendering, input handling, and core game logic.
 public class MainClass extends JPanel implements KeyListener, MouseListener, MouseMotionListener {
 	private static final long serialVersionUID = 1L;
 	private static JFrame frame;
@@ -22,8 +23,7 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	private CustomCanvas3D canvas;
 	private BranchGroup sceneBG;
 	private PickTool pickTool;
-	private static BookGame bookgame;
-	protected static Map<String, Boolean> bookshelfUsage = new HashMap<>();
+	protected static Map<String, Boolean> bookshelfUsage = new HashMap<>(); // Tracks solved bookshelves.
 	private boolean bookGameActive = false;
 	private static int points = 0;
 	private JLabel pointsLabel;
@@ -33,8 +33,11 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	private boolean gameOver = false;
 	private Movement movement;
 	private SoundManager soundManager;
-	private GhostObject ghostObject; // Reference to the GhostObject
-	private Library library; // Persistent Library instance
+	private GhostObject ghostObject;
+	private Library library;
+
+	private boolean swapModeActive = false;
+	private TransformGroup firstSelectedBook = null;
 
 	private static class CustomCanvas3D extends Canvas3D {
 		public CustomCanvas3D(GraphicsConfiguration config) {
@@ -51,17 +54,14 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	public BranchGroup create_Scene() {
 		BranchGroup sceneBG = new BranchGroup();
 		TransformGroup sceneTG = new TransformGroup();
-		Library library = new Library();
-		sceneTG.addChild(library.create_Library());
-
-		// Find the GhostObject in the library's objects
+		library = new Library();
+		sceneTG.addChild(library.create_Library(bookshelfUsage)); // Pass bookshelfUsage to Library.
 		for (Objects obj : library.getObjects()) {
 			if (obj instanceof GhostObject) {
 				ghostObject = (GhostObject) obj;
 				break;
 			}
 		}
-
 		sceneBG.addChild(sceneTG);
 		sceneBG.addChild(CommonsSK.add_Lights(CommonsSK.White, 1));
 		return sceneBG;
@@ -69,7 +69,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 
 	public MainClass() {
 		soundManager = new SoundManager();
-
 		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
 		canvas = new CustomCanvas3D(config);
 		canvas.setFocusable(true);
@@ -103,30 +102,14 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		viewTG = universe.getViewingPlatform().getViewPlatformTransform();
 		movement = new Movement(viewTG);
 
-		if (Library.characterTG == null) {
-			Library.characterTG = new TransformGroup();
-		}
-		Library.characterTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-
 		sceneBG = create_Scene();
 		pickTool = new PickTool(sceneBG);
 		pickTool.setMode(PickTool.GEOMETRY);
 
-		if (Library.characterTG.numChildren() > 0) {
-			Sphere characterSphere = (Sphere) Library.characterTG.getChild(0);
-			Shape3D characterShape = (Shape3D) characterSphere.getChild(0);
-			CollisionDetectCharacter collisionBehavior = new CollisionDetectCharacter(characterShape);
-			collisionBehavior.setSchedulingBounds(new BoundingSphere(new Point3d(0, 0, 0), 100));
-			Library.characterTG.addChild(collisionBehavior);
-		}
-
-		bookgame = new BookGame();
-
 		Transform3D initialView = new Transform3D();
-		initialView.setTranslation(new Vector3f(0f, 2f, 20f));
+		initialView.setTranslation(new Vector3f(0f, 1f, 20f));
 		viewTG.setTransform(initialView);
 
-		// Ensure the ghost is hidden initially
 		if (ghostObject != null) {
 			ghostObject.hideGhost();
 		}
@@ -160,27 +143,22 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		gameOver = true;
 		soundManager.playSound("lose.wav", false);
 
-		// Show the ghost in front of the character
 		if (ghostObject != null) {
-			// Get the character's position and orientation
 			Transform3D viewTransform = new Transform3D();
 			viewTG.getTransform(viewTransform);
 			Vector3f characterPos = new Vector3f();
 			viewTransform.get(characterPos);
 
-			// Get the character's forward direction (Z-axis in view space)
-			Vector3f forward = new Vector3f(0, 0, -1); // Forward in view space (negative Z)
+			Vector3f forward = new Vector3f(0, 0, -1);
 			viewTransform.transform(forward);
 			forward.normalize();
 
-			// Position the ghost 2 units in front of the character
 			float distanceInFront = 2.0f;
 			Vector3f ghostPos = new Vector3f(forward);
 			ghostPos.scale(distanceInFront);
 			ghostPos.add(characterPos);
-			ghostPos.y = characterPos.y - 0.5f; // Lower the ghost by 1 unit relative to the character
+			ghostPos.y = characterPos.y - 0.5f;
 
-			// Update the ghost's position and show it
 			ghostObject.setPosition(ghostPos);
 			ghostObject.showGhost();
 		}
@@ -205,6 +183,8 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		bookshelfUsage.clear();
 		timeRemaining = 300;
 		gameOver = false;
+		swapModeActive = false;
+		firstSelectedBook = null;
 
 		Transform3D initialView = new Transform3D();
 		initialView.setTranslation(new Vector3f(0f, 2f, 0f));
@@ -215,7 +195,6 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		pointsLabel.setText("Puzzles Solved: " + points);
 		timerLabel.setText("Time: 05:00");
 
-		// Hide the ghost again on restart
 		if (ghostObject != null) {
 			ghostObject.hideGhost();
 		}
@@ -299,27 +278,67 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 					System.out.println("  UserData: " + userData);
 
 					if ("book".equals(userData)) {
+						if (swapModeActive) {
+							if (tg == firstSelectedBook) {
+								JOptionPane.showMessageDialog(this, "Please select a different book to swap with!");
+								return;
+							}
+							BookGame bookGame = new BookGame();
+							bookGame.swapPositions(firstSelectedBook, tg);
+							soundManager.playSound("swap.wav", false);
+							System.out.println("Swapped books!");
+							swapModeActive = false;
+							firstSelectedBook = null;
+							return;
+						}
+
 						Node parent = tg.getParent();
+						String shelfId = null;
+						int shelfNumber = -1;
 						while (parent != null) {
 							if (parent instanceof TransformGroup) {
 								TransformGroup parentTG = (TransformGroup) parent;
 								Object parentUserData = parentTG.getUserData();
 								System.out.println("  Parent UserData: " + parentUserData);
 								if (parentUserData != null && parentUserData.toString().startsWith("shelf_")) {
-									String shelfId = (String) parentUserData;
-									System.out.println("Found book on shelf: " + shelfId);
-									if (bookshelfUsage.getOrDefault(shelfId, false)) {
-										JOptionPane.showMessageDialog(this, shelfId + " has already been solved!");
-										return;
-									}
-									int shelfNumber = Integer.parseInt(shelfId.split("_")[1]);
-									startBookOrderingGame(shelfNumber, shelfId);
-									return;
+									shelfId = (String) parentUserData;
+									shelfNumber = Integer.parseInt(shelfId.split("_")[1]);
+									break;
 								}
 							}
 							parent = parent.getParent();
 						}
-						System.out.println("No shelf found in hierarchy above book!");
+
+						if (shelfId == null) {
+							System.out.println("No shelf found in hierarchy above book!");
+							return;
+						}
+
+						if (bookshelfUsage.getOrDefault(shelfId, false)) {
+							JOptionPane.showMessageDialog(this, shelfId + " has already been solved!");
+							return;
+						}
+
+						String[] options = {"Swap Book", "Solve Puzzle"};
+						int choice = JOptionPane.showOptionDialog(
+								this,
+								"What would you like to do with the book?",
+								"Book Interaction",
+								JOptionPane.DEFAULT_OPTION,
+								JOptionPane.QUESTION_MESSAGE,
+								null,
+								options,
+								options[1]
+						);
+
+						if (choice == 0) {
+							swapModeActive = true;
+							firstSelectedBook = tg;
+							JOptionPane.showMessageDialog(this, "First book selected. Now click another book to swap with.");
+							return;
+						} else if (choice == 1) {
+							startBookOrderingGame(shelfNumber, shelfId);
+						}
 						return;
 					} else if ("door".equals(userData) || "door_open".equals(userData)) {
 						movement.toggleNearbyDoors();
@@ -352,12 +371,8 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 						lastMouseY = mousePos.y;
 						System.out.println("Mouse position reset to: (" + lastMouseX + ", " + lastMouseY + ") on restore");
 					}
-					// Check if the game was won and trigger book swapping
 					if (game.isGameWon()) {
 						System.out.println("Book ordering game won for " + shelfId + "! Triggering book swap...");
-						//library.checkWinAndSwap();
-
-						// Check if all puzzles are solved (win condition)
 						boolean allPuzzlesSolved = true;
 						for (int i = 1; i <= 8; i++) {
 							String currentShelfId = "shelf_" + i;
@@ -366,20 +381,16 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 								break;
 							}
 						}
-
-						// If all puzzles are solved, automatically open the doors
 						if (allPuzzlesSolved) {
 							System.out.println("All puzzles solved! Player has won the game. Opening doors...");
-							// Ensure doors are opened (if not already open)
 							for (TransformGroup doorTG : Library.doors) {
 								Object userData = doorTG.getUserData();
 								boolean isOpen = userData instanceof String && ((String) userData).startsWith("door_open");
 								if (!isOpen) {
 									movement.toggleNearbyDoors();
-									break; // toggleNearbyDoors will handle both doors
+									break;
 								}
 							}
-							// Optionally, show a win message
 							JOptionPane.showMessageDialog(MainClass.this,
 									"Congratulations! You’ve solved all puzzles and won the game!\nThe doors are now open.",
 									"Victory",
@@ -407,25 +418,31 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 	public static void main(String[] args) {
 		SoundManager soundManager = new SoundManager();
 		soundManager.playSound("Horror.wav", true);
-		SwingUtilities.invokeLater(() -> {
-			frame = new JFrame("Haunted Leddy");
-			MainClass mainPanel = new MainClass();
-			frame.getContentPane().add(mainPanel);
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			frame.setSize(800, 800);
-			frame.setVisible(true);
-			mainPanel.canvas.requestFocusInWindow();
+
+		JFrame tempFrame = new JFrame();
+		tempFrame.setUndecorated(true);
+		tempFrame.setSize(0, 0);
+		tempFrame.setLocationRelativeTo(null);
+		tempFrame.setVisible(true);
+
+		GameIntroPopup introPopup = new GameIntroPopup(tempFrame, () -> {
+			SwingUtilities.invokeLater(() -> {
+				tempFrame.dispose();
+				frame = new JFrame("Haunted Leddy");
+				MainClass mainPanel = new MainClass();
+				frame.getContentPane().add(mainPanel);
+				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				frame.setSize(800, 800);
+				frame.setVisible(true);
+				mainPanel.canvas.requestFocusInWindow();
+			});
 		});
+		introPopup.showPopup();
 	}
 
-	@Override
-	public void keyTyped(KeyEvent e) {}
-	@Override
-	public void mousePressed(MouseEvent e) {}
-	@Override
-	public void mouseReleased(MouseEvent e) {}
-	@Override
-	public void mouseEntered(MouseEvent e) {}
-	@Override
-	public void mouseExited(MouseEvent e) {}
+	@Override public void keyTyped(KeyEvent e) {}
+	@Override public void mousePressed(MouseEvent e) {}
+	@Override public void mouseReleased(MouseEvent e) {}
+	@Override public void mouseEntered(MouseEvent e) {}
+	@Override public void mouseExited(MouseEvent e) {}
 }

@@ -11,7 +11,7 @@ public class Movement {
     private static final float JUMP_HEIGHT = 1.0f;
     private static final float CROUCH_HEIGHT = 1.0f;
     private static final float DOOR_INTERACT_DISTANCE = 5.0f;
-    private static final float EYE_HEIGHT = 0.5f; // Add an eye height offset to raise the camera
+    private static final float EYE_HEIGHT = 0.28f; // Add an eye height offset to raise the camera
     private static final float GRAVITY = -0.05f; // Gravity acceleration per frame
     private static final float TERMINAL_VELOCITY = -0.5f; // Maximum falling speed
     private float yaw = 0.0f;
@@ -80,10 +80,12 @@ public class Movement {
                 updatePosition = true;
                 break;
             case KeyEvent.VK_SPACE:
-                if (!isJumping && !isCrouching && Library.position.y <= defaultHeight + 0.01f) {
+                if (!isJumping && !isCrouching && Math.abs(Library.position.y - defaultHeight) < 0.1f) {
                     isJumping = true;
                     verticalVelocity = 0.3f; // Initial upward velocity for jump
                     System.out.println("Jump initiated with velocity: " + verticalVelocity);
+                } else {
+                    System.out.println("Cannot jump: isJumping=" + isJumping + ", isCrouching=" + isCrouching + ", y=" + Library.position.y + ", defaultHeight=" + defaultHeight);
                 }
                 break;
             case KeyEvent.VK_CONTROL:
@@ -118,9 +120,9 @@ public class Movement {
                 Library.lastSafePosition.set(Library.position);
                 Library.position.set(proposedPosition);
                 updatePosition();
-                System.out.println("Moved to: " + Library.position);
+               // System.out.println("Moved to: " + Library.position);
             } else {
-                System.out.println("Blocked by collision at: " + proposedPosition);
+               // System.out.println("Blocked by collision at: " + proposedPosition);
             }
             updateLook();
         }
@@ -131,32 +133,26 @@ public class Movement {
             Vector3f proposedPosition = new Vector3f(Library.position);
             proposedPosition.y = defaultHeight;
 
+            System.out.println("Attempting to stand up from " + Library.position.y + " to " + defaultHeight);
+
             if (tryMove(proposedPosition)) {
                 Library.lastSafePosition.set(Library.position);
                 Library.position.set(proposedPosition);
                 updatePosition();
-                System.out.println("Standing up to: " + Library.position);
+                System.out.println("Successfully stood up to: " + Library.position);
             } else {
-                // Try incremental height adjustment
-                System.out.println("Can’t stand up due to collision at " + proposedPosition);
-                float step = 0.1f;
-                float currentY = Library.position.y;
-                boolean foundSafePosition = false;
-                for (float y = currentY + step; y <= defaultHeight; y += step) {
-                    proposedPosition.y = y;
-                    if (tryMove(proposedPosition)) {
-                        Library.lastSafePosition.set(Library.position);
-                        Library.position.set(proposedPosition);
-                        updatePosition();
-                        System.out.println("Found safe standing position at: " + Library.position);
-                        foundSafePosition = true;
-                        break;
-                    }
-                }
-                if (!foundSafePosition) {
-                    System.out.println("No safe position found, forcing height reset to " + defaultHeight);
+                System.out.println("Collision detected while trying to stand up at " + proposedPosition);
+                // Revert to last safe position if possible
+                proposedPosition.set(Library.lastSafePosition);
+                if (tryMove(proposedPosition)) {
+                    Library.position.set(proposedPosition);
+                    updatePosition();
+                    System.out.println("Reverted to last safe position: " + Library.position);
+                } else {
+                    // Force reset to default height as a last resort
                     Library.position.y = defaultHeight;
                     updatePosition();
+                    System.out.println("Forced height reset to: " + Library.position);
                 }
             }
 
@@ -199,7 +195,6 @@ public class Movement {
 
         if (CollisionDetectCharacter.colliding) {
             System.out.println("Collision detected at " + proposedPosition + ", reverting to " + Library.position);
-           // System.out.println("Colliding object: " + (CollisionDetectCharacter.lastCollidedObject != null ? CollisionDetectCharacter.lastCollidedObject : "Unknown"));
             tempTransform.setTranslation(Library.position);
             Library.characterTG.setTransform(tempTransform);
             return false;
@@ -272,7 +267,14 @@ public class Movement {
 
             if (distance <= DOOR_INTERACT_DISTANCE) {
                 float doorWidth = 1.0f; // Adjust based on your DoorObject dimensions
-                float hingeOffsetX = -doorWidth / 2.0f; // Hinge at the left edge
+                float hingeOffsetX;
+
+                // Determine hinge offset based on door position
+                if (doorPos.x < 0) { // Left door (x = -2.5)
+                    hingeOffsetX = -doorWidth / 2.0f; // Hinge on the left edge
+                } else { // Right door (x = 2.5)
+                    hingeOffsetX = doorWidth / -1.2f; // Hinge on the right edge
+                }
 
                 Transform3D currentTransform = new Transform3D();
                 doorTG.getTransform(currentTransform);
@@ -282,7 +284,12 @@ public class Movement {
 
                 Transform3D rotation = new Transform3D();
                 if (shouldOpen) {
-                    rotation.rotY(Math.toRadians(45)); // Open
+                    // Left door opens inward (toward negative z), right door opens outward (toward positive z)
+                    if (doorPos.x < 0) {
+                        rotation.rotY(Math.toRadians(45)); // Left door: rotate clockwise to open inward
+                    } else {
+                        rotation.rotY(Math.toRadians(-45)); // Right door: rotate counterclockwise to open outward
+                    }
                     currentTransform.mul(translateToOrigin);
                     currentTransform.mul(rotation);
                     Transform3D translateBack = new Transform3D();
@@ -292,7 +299,12 @@ public class Movement {
                     doorTG.setUserData("door_open");
                     System.out.println("Opened door at " + doorPos + " (distance: " + distance + ")");
                 } else {
-                    rotation.rotY(Math.toRadians(-45)); // Close
+                    // Both doors should close
+                    if (doorPos.x < 0) {
+                        rotation.rotY(Math.toRadians(-45)); // Left door: rotate counterclockwise to close
+                    } else {
+                        rotation.rotY(Math.toRadians(45)); // Right door: rotate clockwise to close
+                    }
                     currentTransform.mul(translateToOrigin);
                     currentTransform.mul(rotation);
                     Transform3D translateBack = new Transform3D();
@@ -321,6 +333,7 @@ public class Movement {
 
         public void processStimulus(Iterator<WakeupCriterion> criteria) {
             if (!movement.isCrouching) {
+             //   System.out.println("GravityBehavior: y=" + Library.position.y + ", defaultHeight=" + movement.defaultHeight + ", velocity=" + movement.verticalVelocity + ", isJumping=" + movement.isJumping);
                 // Apply gravity if the player is above the ground or falling
                 if (Library.position.y > movement.defaultHeight || movement.verticalVelocity < 0) {
                     movement.verticalVelocity += GRAVITY;
