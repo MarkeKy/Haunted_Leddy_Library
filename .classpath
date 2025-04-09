@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-15">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk-15">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/java3d-core.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/java3d-examples.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/java3d-utils.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/jogamp-fat.jar"/>
-	<classpathentry kind="lib" path="C:/Jars4Java3D/vecmath.jar"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-java3d-1.7.1-final/java3d-core.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-java3d-1.7.1-final/java3d-examples.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-java3d-1.7.1-final/java3d-utils.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-java3d-1.7.1-final/vecmath.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-fat/jogamp-fat.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-fat/jogamp-fat-java-src.zip"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-fat/jogamp-fat-test.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-fat/jogamp-fat-test-java-src.zip"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-fat/jogl-demos.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-fat/jogl-demos-java-src.zip"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-fat/jogl-fonts-p0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-java3d/j3dcore.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-java3d/j3dutils.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Buggy/Downloads/thehauntedlibrary/Jars4Java3D/jogamp-java3d/vecmath.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

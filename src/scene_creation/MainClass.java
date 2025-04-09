@@ -2,12 +2,9 @@ package scene_creation;
 
 import java.awt.*;
 import java.awt.event.*;
-import javax.swing.*;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.*;
 
 import org.jogamp.java3d.*;
 import org.jogamp.java3d.utils.geometry.Sphere;
@@ -16,27 +13,31 @@ import org.jogamp.java3d.utils.picking.PickTool;
 import org.jogamp.java3d.utils.universe.SimpleUniverse;
 import org.jogamp.vecmath.*;
 
+// MainClass manages the game window, scene rendering, input handling, and core game logic.
 public class MainClass extends JPanel implements KeyListener, MouseListener, MouseMotionListener {
 	private static final long serialVersionUID = 1L;
 	private static JFrame frame;
-	private final float MOVE_STEP = 0.15f;
-	private final float JUMP_HEIGHT = 1.0f;  // Height to jump
-	private final float CROUCH_HEIGHT = 1.0f; // Height to lower when crouching
-	private float yaw = 0.0f;
-	private float pitch = 0.0f;
 	private int lastMouseX = -1, lastMouseY = -1;
 	private boolean firstMouse = true;
-	private float rotationSensitivity = 0.005f;
 	private TransformGroup viewTG;
 	private CustomCanvas3D canvas;
 	private BranchGroup sceneBG;
 	private PickTool pickTool;
-	private static BookGame bookgame;
-	private static Map<String, Boolean> bookshelfUsage = new HashMap<>();
+	protected static Map<String, Boolean> bookshelfUsage = new HashMap<>(); // Tracks solved bookshelves.
 	private boolean bookGameActive = false;
-	private boolean isCrouching = false; // Track crouch state
-	private boolean isJumping = false;  // Track jump state
-	private float defaultHeight;        // Store default y position
+	private static int points = 0;
+	private JLabel pointsLabel;
+	private JLabel timerLabel;
+	private Timer gameTimer;
+	private int timeRemaining = 300;
+	private boolean gameOver = false;
+	private Movement movement;
+	private SoundManager soundManager;
+	private GhostObject ghostObject;
+	private Library library;
+
+	private boolean swapModeActive = false;
+	private TransformGroup firstSelectedBook = null;
 
 	private static class CustomCanvas3D extends Canvas3D {
 		public CustomCanvas3D(GraphicsConfiguration config) {
@@ -49,76 +50,25 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 			super.paint(g);
 		}
 	}
-	private static BranchGroup createAxes() {
-	    BranchGroup axisGroup = new BranchGroup();
-	    
-	    // Create a LineArray with 12 vertices for 6 lines (2 per axis)
-	    LineArray axisLines = new LineArray(12, LineArray.COORDINATES | LineArray.COLOR_3);
-	    
-	    // Z-axis: Positive part (Yellow)
-	    axisLines.setCoordinate(0, new Point3f(-100.0f, 0.0f, 0.0f)); // Start of negative X
-	    axisLines.setCoordinate(1, new Point3f(0.0f, 0.0f, 0.0f));    // End at origin
-	    axisLines.setColor(0, new Color3f(1.0f, 0.0f, 0.0f));         // Yellow
-	    axisLines.setColor(1, new Color3f(1.0f, 0.0f, 0.0f));         // Yellow
-	    
-	    // Z-axis: Negative part (Blue)
-	    axisLines.setCoordinate(2, new Point3f(0.0f, 0.0f, 0.0f));    // Start at origin
-	    axisLines.setCoordinate(3, new Point3f(100.0f, 0.0f, 0.0f));  // End of positive X
-	    axisLines.setColor(2, new Color3f(1.0f, 0.5f, 0.0f));         // Blue
-	    axisLines.setColor(3, new Color3f(1.0f, 0.5f, 0.0f));         // Blue
-	    
-	    // Y-axis: Negative part (Green)
-	    axisLines.setCoordinate(4, new Point3f(0.0f, -100.0f, 0.0f)); // Start of negative Y
-	    axisLines.setCoordinate(5, new Point3f(0.0f, 0.0f, 0.0f));    // End at origin
-	    axisLines.setColor(4, new Color3f(0.0f, 1.0f, 0.0f));         // Green
-	    axisLines.setColor(5, new Color3f(0.0f, 1.0f, 0.0f));         // Green
-	    
-	    // Y-axis: Positive part (Green)
-	    axisLines.setCoordinate(6, new Point3f(0.0f, 0.0f, 0.0f));    // Start at origin
-	    axisLines.setCoordinate(7, new Point3f(0.0f, 100.0f, 0.0f));  // End of positive Y
-	    axisLines.setColor(6, new Color3f(0.0f, 1.0f, 0.0f));         // Green
-	    axisLines.setColor(7, new Color3f(0.0f, 1.0f, 0.0f));         // Green
-	    
-	    // X-axis: Positive part (Red)
-	    axisLines.setCoordinate(8, new Point3f(0.0f, 0.0f, -100.0f)); // Start of negative Z
-	    axisLines.setCoordinate(9, new Point3f(0.0f, 0.0f, 0.0f));    // End at origin
-	    axisLines.setColor(8, new Color3f(0.0f, 0.0f, 1.0f));         // Red
-	    axisLines.setColor(9, new Color3f(0.0f, 0.0f, 1.0f));         // Red
-	    
-	    // X-axis: Negative part (Orange)
-	    axisLines.setCoordinate(10, new Point3f(0.0f, 0.0f, 0.0f));   // Start at origin
-	    axisLines.setCoordinate(11, new Point3f(0.0f, 0.0f, 100.0f)); // End of positive Z
-	    axisLines.setColor(10, CommonsSK.Yellow);        // Orange
-	    axisLines.setColor(11, CommonsSK.Yellow);        // Orange
-	    
-	    // Create a Shape3D object for the axes
-	    Shape3D axisShape = new Shape3D(axisLines);
-	    
-	    // Set appearance to ensure per-vertex colors are used
-	    Appearance axisAppearance = new Appearance();
-	    ColoringAttributes ca = new ColoringAttributes();
-	    ca.setShadeModel(ColoringAttributes.NICEST);  // Best color accuracy
-	    axisAppearance.setColoringAttributes(ca);
-	    
-	    axisShape.setAppearance(axisAppearance);
-	    axisGroup.addChild(axisShape);
-	    
-	    return axisGroup;
-	}
 
-
-	public static BranchGroup create_Scene() {
+	public BranchGroup create_Scene() {
 		BranchGroup sceneBG = new BranchGroup();
 		TransformGroup sceneTG = new TransformGroup();
-		sceneTG.addChild(Library.create_Library());
+		library = new Library();
+		sceneTG.addChild(library.create_Library(bookshelfUsage)); // Pass bookshelfUsage to Library.
+		for (Objects obj : library.getObjects()) {
+			if (obj instanceof GhostObject) {
+				ghostObject = (GhostObject) obj;
+				break;
+			}
+		}
 		sceneBG.addChild(sceneTG);
 		sceneBG.addChild(CommonsSK.add_Lights(CommonsSK.White, 1));
-		// Add reference axes
-	    sceneBG.addChild(createAxes());
 		return sceneBG;
 	}
 
 	public MainClass() {
+		soundManager = new SoundManager();
 		GraphicsConfiguration config = SimpleUniverse.getPreferredConfiguration();
 		canvas = new CustomCanvas3D(config);
 		canvas.setFocusable(true);
@@ -129,72 +79,152 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		setLayout(new BorderLayout());
 		add(canvas, BorderLayout.CENTER);
 
+		JPanel topPanel = new JPanel();
+		topPanel.setOpaque(true);
+		topPanel.setBackground(Color.WHITE);
+		topPanel.setLayout(new BorderLayout());
+
+		timerLabel = new JLabel("Time: 05:00");
+		timerLabel.setForeground(Color.BLACK);
+		timerLabel.setFont(new Font("Serif", Font.BOLD, 16));
+		timerLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+		topPanel.add(timerLabel, BorderLayout.WEST);
+
+		pointsLabel = new JLabel("Puzzles Solved: " + points);
+		pointsLabel.setForeground(Color.BLACK);
+		pointsLabel.setFont(new Font("Serif", Font.BOLD, 16));
+		pointsLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
+		topPanel.add(pointsLabel, BorderLayout.EAST);
+
+		add(topPanel, BorderLayout.NORTH);
+
 		SimpleUniverse universe = new SimpleUniverse(canvas);
 		viewTG = universe.getViewingPlatform().getViewPlatformTransform();
-
-		if (Library.characterTG == null) {
-			Library.characterTG = new TransformGroup();
-		}
-		Library.characterTG.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
+		movement = new Movement(viewTG);
 
 		sceneBG = create_Scene();
 		pickTool = new PickTool(sceneBG);
 		pickTool.setMode(PickTool.GEOMETRY);
 
-		if (Library.characterTG.numChildren() > 0) {
-			Sphere characterSphere = (Sphere) Library.characterTG.getChild(0);
-			Shape3D characterShape = (Shape3D) characterSphere.getChild(0);
-			CollisionDetectCharacter collisionBehavior = new CollisionDetectCharacter(characterShape);
-			collisionBehavior.setSchedulingBounds(new BoundingSphere(new Point3d(0, 0, 0), 100));
-			Library.characterTG.addChild(collisionBehavior);
-		}
-
-		bookgame = new BookGame();
-
 		Transform3D initialView = new Transform3D();
-		initialView.setTranslation(new Vector3f(0f, 3f, 20f));
+		initialView.setTranslation(new Vector3f(0f, 1f, 20f));
 		viewTG.setTransform(initialView);
 
-		defaultHeight = Library.position.y; // Store initial height (e.g., 2.0f)
+		if (ghostObject != null) {
+			ghostObject.hideGhost();
+		}
 
 		sceneBG.compile();
 		universe.addBranchGraph(sceneBG);
+
+		startTimer();
 	}
 
-	private boolean tryMove(Vector3f proposedPosition) {
-		Transform3D tempTransform = new Transform3D();
-		tempTransform.setTranslation(proposedPosition);
-		Library.characterTG.setTransform(tempTransform);
+	private void startTimer() {
+		gameTimer = new Timer(1000, e -> {
+			if (gameOver) return;
+			timeRemaining--;
+			updateTimerDisplay();
+			if (timeRemaining <= 0) {
+				gameTimer.stop();
+				handleGameOver();
+			}
+		});
+		gameTimer.start();
+	}
 
-		// Reset colliding to false before checking to ensure fresh state
-		CollisionDetectCharacter.colliding = false;
+	private void updateTimerDisplay() {
+		int minutes = timeRemaining / 60;
+		int seconds = timeRemaining % 60;
+		timerLabel.setText(String.format("Time: %02d:%02d", minutes, seconds));
+	}
 
-		// Brief delay to allow collision behavior to process (if needed)
-		try {
-			Thread.sleep(10);
-		} catch (InterruptedException ex) {
-			ex.printStackTrace();
+	private void handleGameOver() {
+		gameOver = true;
+		soundManager.playSound("lose.wav", false);
+
+		if (ghostObject != null) {
+			Transform3D viewTransform = new Transform3D();
+			viewTG.getTransform(viewTransform);
+			Vector3f characterPos = new Vector3f();
+			viewTransform.get(characterPos);
+
+			Vector3f forward = new Vector3f(0, 0, -1);
+			viewTransform.transform(forward);
+			forward.normalize();
+
+			float distanceInFront = 2.0f;
+			Vector3f ghostPos = new Vector3f(forward);
+			ghostPos.scale(distanceInFront);
+			ghostPos.add(characterPos);
+			ghostPos.y = characterPos.y - 0.5f;
+
+			ghostObject.setPosition(ghostPos);
+			ghostObject.showGhost();
 		}
 
-		if (CollisionDetectCharacter.colliding) {
-			System.out.println("Collision detected at " + proposedPosition + ", reverting to " + Library.position);
-			tempTransform.setTranslation(Library.position);
-			Library.characterTG.setTransform(tempTransform);
-			return false;
+		int option = JOptionPane.showConfirmDialog(
+				this,
+				"Game Over! Time's up.\nDo you want to restart the game?",
+				"Game Over",
+				JOptionPane.YES_NO_OPTION,
+				JOptionPane.WARNING_MESSAGE
+		);
+
+		if (option == JOptionPane.YES_OPTION) {
+			restartGame();
+		} else {
+			System.exit(0);
 		}
-		return true;
+	}
+
+	private void restartGame() {
+		points = 0;
+		bookshelfUsage.clear();
+		timeRemaining = 300;
+		gameOver = false;
+		swapModeActive = false;
+		firstSelectedBook = null;
+
+		Transform3D initialView = new Transform3D();
+		initialView.setTranslation(new Vector3f(0f, 2f, 0f));
+		viewTG.setTransform(initialView);
+		Library.position.set(new Vector3f(0f, 2f, 20f));
+		firstMouse = true;
+
+		pointsLabel.setText("Puzzles Solved: " + points);
+		timerLabel.setText("Time: 05:00");
+
+		if (ghostObject != null) {
+			ghostObject.hideGhost();
+		}
+
+		startTimer();
+		canvas.requestFocusInWindow();
+	}
+
+	public void incrementPoints() {
+		if (gameOver) return;
+		points++;
+		pointsLabel.setText("Puzzles Solved: " + points);
+		pointsLabel.revalidate();
+		pointsLabel.repaint();
+	}
+
+	public void markShelfAsUsed(String shelfId) {
+		bookshelfUsage.put(shelfId, true);
 	}
 
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		if (!bookGameActive) {
+		if (!bookGameActive && !gameOver) {
 			processMouseMovement(e);
 		}
 	}
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		if (!bookGameActive) {
+		if (!bookGameActive && !gameOver) {
 			processMouseMovement(e);
 		}
 	}
@@ -206,44 +236,23 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 			lastMouseX = x;
 			lastMouseY = y;
 			firstMouse = false;
+			System.out.println("Mouse reset to: (" + x + ", " + y + ")");
 			return;
 		}
 		int deltaX = x - lastMouseX;
 		int deltaY = y - lastMouseY;
 		lastMouseX = x;
 		lastMouseY = y;
-
-		if (!e.isShiftDown()) {
-			yaw += deltaX * rotationSensitivity;
-			pitch += deltaY * rotationSensitivity;
-			float pitchLimit = (float)Math.toRadians(89);
-			pitch = Math.max(-pitchLimit, Math.min(pitchLimit, pitch));
-			updateLook();
-		}
-	}
-
-	private void updateLook() {
-		if (!bookGameActive) {
-			Transform3D rotation = new Transform3D();
-			rotation.rotY(yaw);
-			Transform3D pitchRot = new Transform3D();
-			pitchRot.rotX(pitch);
-			rotation.mul(pitchRot);
-			Transform3D translation = new Transform3D();
-			translation.setTranslation(new Vector3f(Library.position.x, Library.position.y, Library.position.z));
-			Transform3D viewTransform = new Transform3D();
-			viewTransform.mul(translation, rotation);
-			viewTG.setTransform(viewTransform);
-		}
+		movement.processMouseMovement(deltaX, deltaY, e.isShiftDown());
 	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		if (bookGameActive) return;
+		if (bookGameActive || gameOver) return;
 
 		Point3d point3d = new Point3d();
 		Point3d center = new Point3d();
-		canvas.getPixelLocationInImagePlate(e.getX(), e.getY(), point3d); // Use mouse position directly
+		canvas.getPixelLocationInImagePlate(e.getX(), e.getY(), point3d);
 		canvas.getCenterEyeInImagePlate(center);
 		Transform3D transform3D = new Transform3D();
 		canvas.getImagePlateToVworld(transform3D);
@@ -255,61 +264,139 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 		pickTool.setShapeRay(point3d, mouseVec);
 		PickResult pickResult = pickTool.pickClosest();
 
+		System.out.println("Click at (" + e.getX() + ", " + e.getY() + ") - Pick result: " + (pickResult != null ? "Hit" : "Miss"));
+
 		if (pickResult != null) {
 			Node node = pickResult.getNode(PickResult.SHAPE3D);
 			System.out.println("Picked node: " + (node != null ? node.getClass().getSimpleName() : "null"));
 
 			while (node != null) {
+				System.out.println("Node: " + node.getClass().getSimpleName());
 				if (node instanceof TransformGroup) {
 					TransformGroup tg = (TransformGroup) node;
 					Object userData = tg.getUserData();
-					System.out.println("Checking node with userData: " + userData);
+					System.out.println("  UserData: " + userData);
 
 					if ("book".equals(userData)) {
-						TransformGroup bookRow = (TransformGroup) tg.getParent();
-						if (bookRow == null) {
-							System.out.println("Book has no row parent!");
+						if (swapModeActive) {
+							if (tg == firstSelectedBook) {
+								JOptionPane.showMessageDialog(this, "Please select a different book to swap with!");
+								return;
+							}
+							BookGame bookGame = new BookGame();
+							bookGame.swapPositions(firstSelectedBook, tg);
+							soundManager.playSound("swap.wav", false);
+							System.out.println("Swapped books!");
+							swapModeActive = false;
+							firstSelectedBook = null;
 							return;
 						}
-						TransformGroup shelfTG = (TransformGroup) bookRow.getParent();
-						if (shelfTG == null) {
-							System.out.println("Row has no shelf parent!");
+
+						Node parent = tg.getParent();
+						String shelfId = null;
+						int shelfNumber = -1;
+						while (parent != null) {
+							if (parent instanceof TransformGroup) {
+								TransformGroup parentTG = (TransformGroup) parent;
+								Object parentUserData = parentTG.getUserData();
+								System.out.println("  Parent UserData: " + parentUserData);
+								if (parentUserData != null && parentUserData.toString().startsWith("shelf_")) {
+									shelfId = (String) parentUserData;
+									shelfNumber = Integer.parseInt(shelfId.split("_")[1]);
+									break;
+								}
+							}
+							parent = parent.getParent();
+						}
+
+						if (shelfId == null) {
+							System.out.println("No shelf found in hierarchy above book!");
 							return;
 						}
-						TransformGroup positionedShelfTG = (TransformGroup) shelfTG.getParent();
-						if (positionedShelfTG == null || positionedShelfTG.getUserData() == null) {
-							System.out.println("Shelf has no parent or no user data!");
-							return;
-						}
-						String shelfId = (String) positionedShelfTG.getUserData();
-						System.out.println("Found book on shelf: " + shelfId);
+
 						if (bookshelfUsage.getOrDefault(shelfId, false)) {
-							JOptionPane.showMessageDialog(this, shelfId + " has already been used!");
+							JOptionPane.showMessageDialog(this, shelfId + " has already been solved!");
 							return;
 						}
-						bookshelfUsage.put(shelfId, true);
-						int shelfNumber = Integer.parseInt(shelfId.split("_")[1]);
-						startBookOrderingGame(shelfNumber);
+
+						String[] options = {"Swap Book", "Solve Puzzle"};
+						int choice = JOptionPane.showOptionDialog(
+								this,
+								"What would you like to do with the book?",
+								"Book Interaction",
+								JOptionPane.DEFAULT_OPTION,
+								JOptionPane.QUESTION_MESSAGE,
+								null,
+								options,
+								options[1]
+						);
+
+						if (choice == 0) {
+							swapModeActive = true;
+							firstSelectedBook = tg;
+							JOptionPane.showMessageDialog(this, "First book selected. Now click another book to swap with.");
+							return;
+						} else if (choice == 1) {
+							startBookOrderingGame(shelfNumber, shelfId);
+						}
+						return;
+					} else if ("door".equals(userData) || "door_open".equals(userData)) {
+						movement.toggleNearbyDoors();
 						return;
 					}
 				}
 				node = node.getParent();
 			}
-			System.out.println("Clicked object is not a book or lacks 'book' userData");
+			System.out.println("Clicked object is not a book or door or lacks appropriate userData");
 		} else {
 			System.out.println("Nothing picked at (" + e.getX() + ", " + e.getY() + ")");
 		}
 	}
 
-	private void startBookOrderingGame(int shelfNumber) {
+	private void startBookOrderingGame(int shelfNumber, String shelfId) {
 		SwingUtilities.invokeLater(() -> {
+			movement.saveViewState();
 			bookGameActive = true;
-			BookOrderingGame game = new BookOrderingGame(shelfNumber);
+			BookOrderingGame game = new BookOrderingGame(shelfNumber, shelfId, this);
 			game.addWindowListener(new WindowAdapter() {
 				@Override
 				public void windowClosed(WindowEvent e) {
 					bookGameActive = false;
 					canvas.requestFocusInWindow();
+					movement.restoreViewState();
+					firstMouse = true;
+					Point mousePos = canvas.getMousePosition();
+					if (mousePos != null) {
+						lastMouseX = mousePos.x;
+						lastMouseY = mousePos.y;
+						System.out.println("Mouse position reset to: (" + lastMouseX + ", " + lastMouseY + ") on restore");
+					}
+					if (game.isGameWon()) {
+						System.out.println("Book ordering game won for " + shelfId + "! Triggering book swap...");
+						boolean allPuzzlesSolved = true;
+						for (int i = 1; i <= 8; i++) {
+							String currentShelfId = "shelf_" + i;
+							if (!bookshelfUsage.getOrDefault(currentShelfId, false)) {
+								allPuzzlesSolved = false;
+								break;
+							}
+						}
+						if (allPuzzlesSolved) {
+							System.out.println("All puzzles solved! Player has won the game. Opening doors...");
+							for (TransformGroup doorTG : Library.doors) {
+								Object userData = doorTG.getUserData();
+								boolean isOpen = userData instanceof String && ((String) userData).startsWith("door_open");
+								if (!isOpen) {
+									movement.toggleNearbyDoors();
+									break;
+								}
+							}
+							JOptionPane.showMessageDialog(MainClass.this,
+									"Congratulations! You’ve solved all puzzles and won the game!\nThe doors are now open.",
+									"Victory",
+									JOptionPane.INFORMATION_MESSAGE);
+						}
+					}
 				}
 			});
 			System.out.println("BookOrderingGame launched for Shelf " + shelfNumber);
@@ -318,145 +405,39 @@ public class MainClass extends JPanel implements KeyListener, MouseListener, Mou
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		if (bookGameActive) return;
-
-		float moveX = 0, moveZ = 0, moveY = 0;
-		boolean updatePosition = false;
-
-		switch (e.getKeyCode()) {
-			case KeyEvent.VK_W:
-			case KeyEvent.VK_UP:
-				moveX = -(float)(Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				moveZ = -(float)(Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				updatePosition = true;
-				break;
-			case KeyEvent.VK_S:
-			case KeyEvent.VK_DOWN:
-				moveX = (float)(Math.sin(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				moveZ = (float)(Math.cos(yaw) * Math.cos(pitch)) * MOVE_STEP;
-				updatePosition = true;
-				break;
-			case KeyEvent.VK_A:
-			case KeyEvent.VK_LEFT:
-				moveX = -(float)Math.cos(yaw) * MOVE_STEP;
-				moveZ = (float)Math.sin(yaw) * MOVE_STEP;
-				updatePosition = true;
-				break;
-			case KeyEvent.VK_D:
-			case KeyEvent.VK_RIGHT:
-				moveX = (float)Math.cos(yaw) * MOVE_STEP;
-				moveZ = -(float)Math.sin(yaw) * MOVE_STEP;
-				updatePosition = true;
-				break;
-			case KeyEvent.VK_SPACE: // Jump
-				if (!isJumping && !isCrouching) {
-					isJumping = true;
-					Vector3f jumpPosition = new Vector3f(Library.position);
-					jumpPosition.y += JUMP_HEIGHT;
-					System.out.println("Attempting jump to: " + jumpPosition);
-					if (tryMove(jumpPosition)) {
-						Library.lastSafePosition.set(Library.position);
-						Library.position.set(jumpPosition);
-						Movement.updatePosition();
-						System.out.println("Jumped to: " + Library.position);
-					} else {
-						System.out.println("Jump blocked by collision");
-					}
-					// Immediately try to return to default height
-					Vector3f returnPosition = new Vector3f(Library.position);
-					returnPosition.y = defaultHeight;
-					if (tryMove(returnPosition)) {
-						Library.lastSafePosition.set(Library.position);
-						Library.position.set(returnPosition);
-						Movement.updatePosition();
-						System.out.println("Returned to: " + Library.position);
-					} else {
-						System.out.println("Return blocked by collision");
-					}
-					isJumping = false;
-					updatePosition = false; // Handled manually
-				}
-				break;
-			case KeyEvent.VK_CONTROL: // Crouch
-				if (!isCrouching && !isJumping) {
-					moveY = -CROUCH_HEIGHT;
-					isCrouching = true;
-					updatePosition = true;
-					System.out.println("Crouching to height: " + (Library.position.y + moveY));
-				}
-				break;
-			default:
-				return;
-		}
-
-		if (updatePosition) {
-			Vector3f proposedPosition = new Vector3f(Library.position);
-			proposedPosition.x += moveX;
-			proposedPosition.z += moveZ;
-			proposedPosition.y += moveY;
-
-			if (tryMove(proposedPosition)) {
-				Library.lastSafePosition.set(Library.position);
-				Library.position.set(proposedPosition);
-				Movement.updatePosition();
-				System.out.println("Moved to: " + Library.position);
-			} else {
-				System.out.println("Blocked by collision at: " + proposedPosition);
-			}
-
-			updateLook();
-		}
+		if (bookGameActive || gameOver) return;
+		movement.keyPressed(e);
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		if (bookGameActive) return;
-
-		if (e.getKeyCode() == KeyEvent.VK_CONTROL && isCrouching) {
-			Vector3f proposedPosition = new Vector3f(Library.position);
-			proposedPosition.y = defaultHeight;
-
-			if (tryMove(proposedPosition)) {
-				Library.lastSafePosition.set(Library.position);
-				Library.position.set(proposedPosition);
-				Movement.updatePosition();
-				System.out.println("Standing up to: " + Library.position);
-			} else {
-				System.out.println("Can’t stand up due to collision at: " + proposedPosition);
-			}
-
-			isCrouching = false;
-			updateLook();
-		}
-	}
-
-	private static void startBackgroundSound() {
-		try {
-			URL soundURL = MainClass.class.getResource("Horrorsound.wav");
-			if (soundURL == null) {
-				System.err.println("Horrorsound.wav not found!");
-				return;
-			}
-			AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundURL);
-			javax.sound.sampled.Clip clip = AudioSystem.getClip();
-			clip.open(audioIn);
-			clip.loop(javax.sound.sampled.Clip.LOOP_CONTINUOUSLY);
-		} catch (Exception ex) {
-			System.err.println("Error loading background sound: " + ex.getMessage());
-		}
+		if (bookGameActive || gameOver) return;
+		movement.keyReleased(e);
 	}
 
 	public static void main(String[] args) {
-		startBackgroundSound();
-		SwingUtilities.invokeLater(() -> {
-			frame = new JFrame("Haunted Leddy");
-			MainClass mainPanel = new MainClass();
-			frame.getContentPane().add(mainPanel);
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			frame.setSize(800, 800);
-			frame.setVisible(true);
-			mainPanel.canvas.requestFocusInWindow();
+		SoundManager soundManager = new SoundManager();
+		soundManager.playSound("Horror.wav", true);
+
+		JFrame tempFrame = new JFrame();
+		tempFrame.setUndecorated(true);
+		tempFrame.setSize(0, 0);
+		tempFrame.setLocationRelativeTo(null);
+		tempFrame.setVisible(true);
+
+		GameIntroPopup introPopup = new GameIntroPopup(tempFrame, () -> {
+			SwingUtilities.invokeLater(() -> {
+				tempFrame.dispose();
+				frame = new JFrame("Haunted Leddy");
+				MainClass mainPanel = new MainClass();
+				frame.getContentPane().add(mainPanel);
+				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				frame.setSize(800, 800);
+				frame.setVisible(true);
+				mainPanel.canvas.requestFocusInWindow();
+			});
 		});
+		introPopup.showPopup();
 	}
 
 	@Override public void keyTyped(KeyEvent e) {}
