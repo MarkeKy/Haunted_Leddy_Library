@@ -132,11 +132,6 @@ public class CommonsSK extends JPanel {
 		frame.setVisible(true);
 	}
 
-//	public static void main(String[] args) {
-//		frame = new JFrame("SK's Common File");            // NOTE: change XY to student's initials
-//		frame.getContentPane().add(new CommonsSK(create_Scene()));  // create an instance of the class
-//		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//	}
 }
 
 
